@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="theme-color" content="#123456"><meta name="generator" content="Hexo 4.2.0"><title>基于ROS（机器人操作系统）的数据展示系统 - XJH&#039;s Secret Base</title><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#3273dc"><meta name="application-name" content="XJH&#039;s Secret Base"><meta name="msapplication-TileImage" content="/img/logo.png"><meta name="msapplication-TileColor" content="#3273dc"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="XJH&#039;s Secret Base"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="apple-touch-icon" sizes="144x144" href="/img/logo.png"><meta name="description" content="tips:请在使用该系统前安装好相应的库文件（详见附录二），并在不同控制台分别运行roscore（ros操作系统内核）、rosbag play –loop –pause all.bag（ros数据包展示）和rosrun gmapping slam_gmapping（任务四建图处理进程） 该系统程序名为final_system，使用以下命令克隆git仓库： 1git clone https:&amp;#x2F;&amp;#x2F;gi"><meta property="og:type" content="blog"><meta property="og:title" content="基于ROS（机器人操作系统）的数据展示系统"><meta property="og:url" content="http://asgard-tim.github.io/2023/07/02/ROS%20Task/"><meta property="og:site_name" content="XJH&#039;s Secret Base"><meta property="og:description" content="tips:请在使用该系统前安装好相应的库文件（详见附录二），并在不同控制台分别运行roscore（ros操作系统内核）、rosbag play –loop –pause all.bag（ros数据包展示）和rosrun gmapping slam_gmapping（任务四建图处理进程） 该系统程序名为final_system，使用以下命令克隆git仓库： 1git clone https:&amp;#x2F;&amp;#x2F;gi"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="http://asgard-tim.github.io/images/14.png"><meta property="article:published_time" content="2023-07-02T13:42:58.000Z"><meta property="article:modified_time" content="2023-08-03T09:19:10.851Z"><meta property="article:author" content="明诚"><meta property="article:tag" content="C++"><meta property="article:tag" content="ROS"><meta property="article:tag" content="Linux"><meta property="article:tag" content="Ubuntu"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="http://asgard-tim.github.io/images/14.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://asgard-tim.github.io/2023/07/02/ROS%20Task/"},"headline":"基于ROS（机器人操作系统）的数据展示系统","image":["http://asgard-tim.github.io/images/14.png"],"datePublished":"2023-07-02T13:42:58.000Z","dateModified":"2023-08-03T09:19:10.851Z","author":{"@type":"Person","name":"明诚"},"publisher":{"@type":"Organization","name":"XJH's Secret Base","logo":{"@type":"ImageObject","url":"http://asgard-tim.github.io/img/title.png"}},"description":"tips:请在使用该系统前安装好相应的库文件（详见附录二），并在不同控制台分别运行roscore（ros操作系统内核）、rosbag play –loop –pause all.bag（ros数据包展示）和rosrun gmapping slam_gmapping（任务四建图处理进程） 该系统程序名为final_system，使用以下命令克隆git仓库： 1git clone https:&#x2F;&#x2F;gi"}</script><link rel="canonical" href="http://asgard-tim.github.io/2023/07/02/ROS%20Task/"><link rel="icon" href="/img/logo.png"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/xt256.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600&amp;family=Roboto+Mono"><link rel="stylesheet" href="/css/cyberpunk.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --></head><body class="is-3-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/title.png" alt="XJH&#039;s Secret Base" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">主页</a><a class="navbar-item" href="/archives">时间轴</a><a class="navbar-item" href="/categories">分类</a><a class="navbar-item" href="/tags">标签</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="GitHub" href="https://github.com">GitHub</a><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a><a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;"><i class="fas fa-list-ul"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-6-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2023-07-02T13:42:58.000Z" title="2023/7/2 21:42:58">2023-07-02</time>发表</span><span class="level-item"><time dateTime="2023-08-03T09:19:10.851Z" title="2023/8/3 17:19:10">2023-08-03</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a><span> / </span><a class="link-muted" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1/">软件设计</a></span><span class="level-item">19 分钟读完 (大约2891个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">基于ROS（机器人操作系统）的数据展示系统</h1><div class="content"><p><em>tips</em>:请在使用该系统前安装好相应的库文件（详见附录二），并在不同控制台分别运行roscore（ros操作系统内核）、rosbag play –loop –pause all.bag（ros数据包展示）和rosrun gmapping slam_gmapping（任务四建图处理进程）</p>
+<p>该系统程序名为final_system，使用以下命令克隆git仓库：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/Asgard-Tim/ROS-Coding.git</span><br></pre></td></tr></table></figure>
+
+<p>安装好相关库文件后可通过以下命令运行系统程序：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">//项目构建</span><br><span class="line"></span><br><span class="line">cd /home/ubuntu/project/catkin_ws</span><br><span class="line"></span><br><span class="line">catkin_make</span><br><span class="line"></span><br><span class="line">//程序运行</span><br><span class="line"></span><br><span class="line">source /home/ubuntu/project/catkin_ws/devel/setup.bash</span><br><span class="line"></span><br><span class="line">cd /home/ubuntu/project/catkin_ws</span><br><span class="line"></span><br><span class="line">rosrun final_system final_system</span><br></pre></td></tr></table></figure>
+
+<p>完整代码已上传至Github平台，URL地址：<a target="_blank" rel="noopener" href="https://github.com/Asgard-Tim/ROS-Coding">Asgard-Tim&#x2F;ROS-Coding: 重庆大学明月科创实验班软件设计课程作业 (github.com)</a></p>
+<p>Bilibili同步上传系统演示视频Demo，链接：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1YV411M7jj/?vd_source=9360c83a7f1073e99c67f3821a48fb8c">重庆大学明月科创实验班软件设计作业–ROS数据展示系统_哔哩哔哩_bilibili</a></p>
+<h4 id="程序主要结构与算法分析"><a href="#程序主要结构与算法分析" class="headerlink" title="程序主要结构与算法分析"></a><strong>程序主要结构与算法分析</strong></h4><p>在**main()**函数中：</p>
+<ul>
+<li><p>创建ROS节点和节点句柄。</p>
+</li>
+<li><p>调用**initialize()**函数显示初始菜单:提示用户选择登录、注册或退出系统。</p>
+</li>
+<li><p>定义一个<strong>user</strong>类，用于保存用户的用户名和密码信息;根据用户选择执行不同的操作：</p>
+</li>
+<li><ul>
+<li>登录：要求用户输入用户名和密码，然后检查是否匹配存储在文件中的用户信息。</li>
+<li>注册：要求用户输入新的用户名和密码，然后将用户信息保存到文件中。</li>
+<li>退出系统：结束程序运行。</li>
+</ul>
+</li>
+<li><p>如果登录成功，调用**systeminitialize()**函数显示登录成功后的菜单:提示用户选择不同的数据可视化选项或退出系统。</p>
+</li>
+<li><p>根据用户选择执行不同的数据可视化操作：</p>
+</li>
+</ul>
+<h5 id="任务一：用命令行窗口显示小车的IMU和里程计（odometry）数据"><a href="#任务一：用命令行窗口显示小车的IMU和里程计（odometry）数据" class="headerlink" title="任务一：用命令行窗口显示小车的IMU和里程计（odometry）数据"></a><strong><u>任务一：用命令行窗口显示小车的IMU和里程计（odometry）数据</u></strong></h5><ul>
+<li><ul>
+<li><p>IMU数据：订阅IMU数据的ROS话题，将数据传递给回调函数<strong>callback1</strong>进行处理。</p>
+</li>
+<li><p>回调函数<strong>callback1</strong>，处理IMU数据：</p>
+</li>
+<li><ul>
+<li>从接收到的IMU消息中获取线性加速度和角速度信息。</li>
+<li>使用<strong>std::cout</strong>打印出线性加速度和角速度信息。</li>
+</ul>
+</li>
+<li><p>里程计数据：订阅里程计数据的ROS话题，将数据传递给回调函数<strong>callback2</strong>进行处理。</p>
+</li>
+<li><p>回调函数<strong>callback2</strong>，处理里程计数据：</p>
+</li>
+<li><ul>
+<li>从接收到的里程计消息中获取位置和姿态信息。</li>
+<li>使用<strong>std::cout</strong>打印出位置和姿态信息。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h5 id="任务二：用图形界面显示颜色相机和深度相机的数据（利用OpenCV库）"><a href="#任务二：用图形界面显示颜色相机和深度相机的数据（利用OpenCV库）" class="headerlink" title="任务二：用图形界面显示颜色相机和深度相机的数据（利用OpenCV库）"></a><strong><u>任务二：用图形界面显示颜色相机和深度相机的数据（利用OpenCV库）</u></strong></h5><ul>
+<li><ul>
+<li><p>颜色相机数据：订阅颜色相机数据的ROS话题，将数据传递给回调函数<strong>callback3</strong>进行处理。</p>
+</li>
+<li><p>回调函数<strong>callback3</strong>，处理颜色相机数据：</p>
+</li>
+<li><ul>
+<li>将接收到的彩色图像消息转换为OpenCV的图像格式。</li>
+<li>使用OpenCV的窗口显示彩色图像。</li>
+</ul>
+</li>
+<li><p>深度相机数据：订阅深度相机数据的ROS话题，将数据传递给回调函数<strong>callback4</strong>进行处理。</p>
+</li>
+<li><p>回调函数<strong>callback4</strong>，处理深度相机数据：</p>
+</li>
+<li><ul>
+<li>将接收到的深度图像消息转换为OpenCV的图像格式。</li>
+<li>使用OpenCV的窗口显示深度图像。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h5 id="任务三：用图形界面显示激光雷达的点云数据（利用PCL库）"><a href="#任务三：用图形界面显示激光雷达的点云数据（利用PCL库）" class="headerlink" title="任务三：用图形界面显示激光雷达的点云数据（利用PCL库）"></a><strong><u>任务三：用图形界面显示激光雷达的点云数据（利用PCL库）</u></strong></h5><ul>
+<li><ul>
+<li><p>点云数据：订阅点云数据的ROS话题，将数据传递给回调函数<strong>callback5</strong>进行处理。</p>
+</li>
+<li><p>**pcl::visualization::CloudViewer viewer(“Cloud      Viewer”);**：创建一个PCL点云可视化器。</p>
+</li>
+<li><p>回调函数<strong>callback5</strong>，处理点云数据：</p>
+</li>
+<li><ul>
+<li>将接收到的点云消息转换为PCL的点云格式。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><ul>
+<li><ul>
+<li>使用PCL的可视化器显示点云。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h5 id="任务四：自行选择一种高级算法（例如语义分割、三维重建、导航定位（SLAM）等），实现该算法（可以直接利用第三方库），将其集成到系统中"><a href="#任务四：自行选择一种高级算法（例如语义分割、三维重建、导航定位（SLAM）等），实现该算法（可以直接利用第三方库），将其集成到系统中" class="headerlink" title="任务四：自行选择一种高级算法（例如语义分割、三维重建、导航定位（SLAM）等），实现该算法（可以直接利用第三方库），将其集成到系统中"></a><strong><u>任务四：自行选择一种高级算法（例如语义分割、三维重建、导航定位（SLAM）等），实现该算法（可以直接利用第三方库），将其集成到系统中</u></strong></h5><ul>
+<li><ul>
+<li><strong>选择Gmapping算法（一个基于2D激光雷达使用RBPF（Rao-Blackwellized Particle Filters）算法完成二维栅格地图构建的SLAM算法）</strong></li>
+<li>占据栅格地图数据：订阅占据栅格地图数据的ROS话题，将数据传递给回调函数<strong>callback6</strong>进行处理。</li>
+<li>回调函数<strong>callback6</strong>，处理占据栅格地图数据：</li>
+<li><ul>
+<li><ul>
+<li>从接收到的占据栅格地图消息中获取分辨率、宽度和高度等信息。</li>
+<li>创建一个OpenCV的图像对象，用于绘制地图。</li>
+<li>遍历地图的每个栅格，根据栅格的值绘制不同的颜色圆点。</li>
+<li>使用OpenCV的窗口显示地图。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="各功能部分构建过程与实现效果"><a href="#各功能部分构建过程与实现效果" class="headerlink" title="各功能部分构建过程与实现效果"></a><strong>各功能部分构建过程与实现效果</strong></h4><h5 id="1-系统界面"><a href="#1-系统界面" class="headerlink" title="1.系统界面"></a>1.系统界面</h5><h6 id="（1）登录界面"><a href="#（1）登录界面" class="headerlink" title="（1）登录界面"></a>（1）登录界面</h6><p><img src="/images/1.png" alt="1"></p>
+<h6 id="（2）功能选择界面"><a href="#（2）功能选择界面" class="headerlink" title="（2）功能选择界面"></a>（2）功能选择界面</h6><p><img src="/images/2.png" alt="2"></p>
+<h5 id="2-各部分功能"><a href="#2-各部分功能" class="headerlink" title="2.各部分功能"></a>2.各部分功能</h5><p>整体架构思路（以imu数据显示为例，其余任务基本一致）：</p>
+<p>（1）在运行rosbag后利用rostopic list指令查看当前开放的所有话题</p>
+<p><img src="/images/3.png" alt="3"></p>
+<p>（2）找到所需数据所对应的话题（如imu数据对应的是&#x2F;imu&#x2F;data_raw这一topic)，利用rostopic info指令查看其消息类型(如图中Type所示)</p>
+<p><img src="/images/4.png" alt="4"></p>
+<p>（3）根据获得的消息类型（如上图Type所示应为sensor_msg&#x2F;Imu),利用rosmsg show指令查看其对应的各部分数据类型</p>
+<p><img src="/images/5.png" alt="5"></p>
+<p>（4）根据获得的数据类型，编写对应callback函数展示对应数据</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">void callback1(const sensor_msgs::Imu::ConstPtr&amp; ptr)</span><br><span class="line">&#123;</span><br><span class="line">    cout &lt;&lt; &quot;std_msgs/Header header&quot; &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    uint32 seq: &quot; &lt;&lt; ptr-&gt;header.seq &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    time stamp: &quot; &lt;&lt; ptr-&gt;header.stamp &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    string frame_id: &quot; &lt;&lt; ptr-&gt;header.frame_id &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;geometry_msgs/Quaternion orientation&quot; &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 x: &quot; &lt;&lt; ptr-&gt;orientation.x &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 y: &quot; &lt;&lt; ptr-&gt;orientation.y &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 z: &quot; &lt;&lt; ptr-&gt;orientation.z &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 w: &quot; &lt;&lt; ptr-&gt;orientation.w &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;float64[9] orientation_covariance&quot; &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    &quot;;</span><br><span class="line">    for (int i = 0; i &lt; 9; i++) &#123;</span><br><span class="line">        cout &lt;&lt; ptr-&gt;orientation_covariance[i] &lt;&lt; &quot; &quot;;</span><br><span class="line">    &#125;</span><br><span class="line">    cout &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;geometry_msgs/Vector3 angular_velocity&quot; &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 x: &quot; &lt;&lt; ptr-&gt;angular_velocity.x &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 y: &quot; &lt;&lt; ptr-&gt;angular_velocity.y &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 z: &quot; &lt;&lt; ptr-&gt;angular_velocity.z &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;float64[9] angular_velocity_covariance&quot; &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    &quot;;</span><br><span class="line">    for (int i = 0; i &lt; 9; i++) &#123;</span><br><span class="line">        cout &lt;&lt; ptr-&gt;angular_velocity_covariance[i] &lt;&lt; &quot; &quot;;</span><br><span class="line">    &#125;</span><br><span class="line">    cout &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;geometry_msgs/Vector3 linear_acceleration&quot; &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 x: &quot; &lt;&lt; ptr-&gt;linear_acceleration.x &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 y: &quot; &lt;&lt; ptr-&gt;linear_acceleration.y &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    float64 z: &quot; &lt;&lt; ptr-&gt;linear_acceleration.z &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;float64[9] linear_acceleration_covariance&quot; &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;    &quot;;</span><br><span class="line">    for (int i = 0; i &lt; 9; i++) &#123;</span><br><span class="line">        cout &lt;&lt; ptr-&gt;linear_acceleration_covariance[i] &lt;&lt; &quot; &quot;;</span><br><span class="line">    &#125;</span><br><span class="line">    cout &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; &quot;-------------------------------------------------------------&quot; &lt;&lt; endl;</span><br><span class="line">    return ;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>（5）编写主函数程序建立订阅者节点订阅话题内容，并调用对应callback函数进行数据处理与显示</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ros::init(argc, argv, &quot;imu&quot;);</span><br><span class="line"></span><br><span class="line">ros::NodeHandle nodeHandle;</span><br><span class="line"></span><br><span class="line">ros::Subscriber subscriber = nodeHandle.subscribe(&quot;/imu/data_raw&quot;, 1000, callback1);</span><br><span class="line"></span><br><span class="line">ros::spin();</span><br></pre></td></tr></table></figure>
+
+<p>注意：在任务二、三中，对应的callback函数需要分别调用opencv和pcl库，将读取的数据进行处理，以可视化图形界面的形式显示出来。</p>
+<p>这里以任务三为例展示如何使用库文件进行数据处理并进行图形化界面显示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">void callback5(const sensor_msgs::PointCloud2::ConstPtr&amp; msg)</span><br><span class="line">&#123;</span><br><span class="line">    pcl::PointCloud&lt;pcl::PointXYZ&gt; cloud;  </span><br><span class="line">    // 创建一个存储PointXYZ类型点云数据的PointCloud对象，每个点有三个坐标值</span><br><span class="line">    pcl::PCLPointCloud2 pcl_pc;  </span><br><span class="line">    // 创建一个PCLPointCloud2对象，用于存储传感器消息中的点云数据</span><br><span class="line">    pcl_conversions::toPCL(*msg, pcl_pc);  </span><br><span class="line">    // 将ROS中的sensor_msgs::PointCloud2类型消息转换为PCL中的PCLPointCloud2类型</span><br><span class="line">    pcl::fromPCLPointCloud2(pcl_pc, cloud); </span><br><span class="line">    // 将PCLPointCloud2类型转换为PointCloud&lt;pcl::PointXYZ&gt;类型</span><br><span class="line">    viewer.showCloud(cloud.makeShared());  // 在可视化窗口中显示点云数据</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最终各部分功能实现的效果图如下：</p>
+<p>（1）展示imu数据</p>
+<p><img src="/images/6.png" alt="6"></p>
+<p>（2）展示里程计数据</p>
+<p><img src="/images/7.png" alt="7"></p>
+<p>（3）展示颜色相机数据</p>
+<p><img src="/images/8.png" alt="8"></p>
+<p>（4）展示深度相机数据</p>
+<p><img src="/images/9.png" alt="9"></p>
+<p>（5）展示激光雷达点云数据</p>
+<p><img src="/images/10.png" alt="10"></p>
+<h5 id="3-Gmapping建图算法的实现"><a href="#3-Gmapping建图算法的实现" class="headerlink" title="3.Gmapping建图算法的实现"></a>3.Gmapping建图算法的实现</h5><h6 id="（1）msg数据类型查询"><a href="#（1）msg数据类型查询" class="headerlink" title="（1）msg数据类型查询"></a>（1）msg数据类型查询</h6><p><img src="/images/11.png" alt="11"></p>
+<h6 id="（2）启动Gmapping算法功能包"><a href="#（2）启动Gmapping算法功能包" class="headerlink" title="（2）启动Gmapping算法功能包"></a>（2）启动Gmapping算法功能包</h6><p>输入如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rosrun gmapping slam_gmapping</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/12.png" alt="12"></p>
+<p><img src="/images/13.png" alt="13"></p>
+<h6 id="（3）编写回调函数，利用opencv库绘制2D地图"><a href="#（3）编写回调函数，利用opencv库绘制2D地图" class="headerlink" title="（3）编写回调函数，利用opencv库绘制2D地图"></a>（3）编写回调函数，利用opencv库绘制2D地图</h6><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">void callback6(const nav_msgs::OccupancyGrid::ConstPtr&amp; ptr)</span><br><span class="line"></span><br><span class="line">&#123;  </span><br><span class="line"></span><br><span class="line">  std::cout &lt;&lt; &quot;resolution: &quot; &lt;&lt; ptr-&gt;info.resolution &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line">  std::cout &lt;&lt; &quot;width: &quot; &lt;&lt; ptr-&gt;info.width &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line">  std::cout &lt;&lt; &quot;height: &quot; &lt;&lt; ptr-&gt;info.height &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line">  double scale = 1.0;</span><br><span class="line"></span><br><span class="line">  int width = 1200;</span><br><span class="line"></span><br><span class="line">  int height = 1200;</span><br><span class="line"></span><br><span class="line">  cv::Point offset(-1600, -1600);</span><br><span class="line"></span><br><span class="line">  cv::Mat map = cv::Mat::zeros(cv::Size(width, height), CV_8UC3);</span><br><span class="line"></span><br><span class="line">  for (int i = 0; i &lt; ptr-&gt;info.width * ptr-&gt;info.height; ++i) &#123;</span><br><span class="line"></span><br><span class="line">  int x = (i % ptr-&gt;info.width + offset.x) * scale, y = (i / ptr-&gt;info.width + offset.y) * scale;</span><br><span class="line"></span><br><span class="line">  if (ptr-&gt;data[i] == -1) &#123;</span><br><span class="line"></span><br><span class="line">  cv::circle(map, cv::Point(x, y), 1, cv::Scalar(255, 255, 255), -1);</span><br><span class="line"></span><br><span class="line">    &#125; else if (ptr-&gt;data[i] &gt;= 80) &#123;</span><br><span class="line"></span><br><span class="line">  cv::circle(map, cv::Point(x, y), 3, cv::Scalar(0, 0, 0), -1);</span><br><span class="line"></span><br><span class="line">    &#125; else &#123;</span><br><span class="line"></span><br><span class="line">  cv::circle(map, cv::Point(x, y), 3, cv::Scalar(0, 255, 0), -1);</span><br><span class="line"></span><br><span class="line">    &#125;   </span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  cv::imshow(&quot;map&quot;, map);</span><br><span class="line"></span><br><span class="line">  cv::waitKey(1000);</span><br><span class="line"></span><br><span class="line">  return ;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h6 id="（4）建立节点并订阅-map话题，调用回调函数"><a href="#（4）建立节点并订阅-map话题，调用回调函数" class="headerlink" title="（4）建立节点并订阅&#x2F;map话题，调用回调函数"></a>（4）建立节点并订阅&#x2F;map话题，调用回调函数</h6><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ros::init(argc, argv, &quot;show_map&quot;);</span><br><span class="line">ros::NodeHandle nodeHandle;</span><br><span class="line">ros::Subscriber subscriber = nodeHandle.subscribe(&quot;/map&quot;, 1000, callback6);</span><br><span class="line">ros::spin();</span><br></pre></td></tr></table></figure>
+
+<h6 id="（5）建图结果"><a href="#（5）建图结果" class="headerlink" title="（5）建图结果"></a>（5）建图结果</h6><p><img src="/images/14.png" alt="14"></p>
+<h4 id="附录一：必要的库文件和头文件："><a href="#附录一：必要的库文件和头文件：" class="headerlink" title="附录一：必要的库文件和头文件："></a>附录一：必要的库文件和头文件：</h4><ol>
+<li><ul>
+<li>**<iostream>**：用于输入输出操作。</li>
+<li>**<fstream>**：用于文件读写操作。</li>
+<li>**<string>**：用于处理字符串。</li>
+<li>**<ctime>**：用于时间相关操作。</li>
+<li>**<iomanip>**：用于格式化输出。</li>
+<li>**”ros&#x2F;ros.h”**：ROS的主要头文件。</li>
+<li>**”sensor_msgs&#x2F;Imu.h”**：ROS中IMU（惯性测量单元）数据的消息类型。</li>
+<li>**”nav_msgs&#x2F;Odometry.h”**：ROS中里程计数据的消息类型。</li>
+<li>**<cstring>**：用于C风格字符串操作。</li>
+<li>**&lt;opencv2&#x2F;opencv.hpp&gt;**：OpenCV库的头文件。</li>
+<li>**”cv_bridge&#x2F;cv_bridge.h”**：ROS中用于将ROS图像消息转换为OpenCV图像格式的库。</li>
+<li>**”image_transport&#x2F;image_transport.h”**：ROS中用于图像传输的库。</li>
+<li>**<memory>**：用于内存管理。</li>
+<li>**”pcl&#x2F;visualization&#x2F;cloud_viewer.h”**：PCL（点云库）中用于可视化点云的类。</li>
+<li>**”pcl_conversions&#x2F;pcl_conversions.h”**：PCL与ROS消息类型转换的库。</li>
+<li>**”pcl&#x2F;point_types.h”**：定义了PCL中常用的点类型。</li>
+<li>**”pcl&#x2F;PCLPointCloud2.h”**：PCL中点云数据的消息类型。</li>
+<li>**”pcl&#x2F;conversions.h”**：PCL与ROS消息类型转换的库。</li>
+<li>**”pcl_ros&#x2F;transforms.h”**：PCL中点云坐标系变换的库。</li>
+<li>**”nav_msgs&#x2F;OccupancyGrid.h”**：ROS中占据栅格地图数据的消息类型。</li>
+</ul>
+</li>
+</ol>
+<h4 id="附录二：安装各库文件的命令"><a href="#附录二：安装各库文件的命令" class="headerlink" title="附录二：安装各库文件的命令"></a>附录二：安装各库文件的命令</h4><ol>
+<li><pre><code>sudo apt-get update
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">2. 更新包管理器的软件包列表。</span><br><span class="line"></span><br><span class="line">3. ```</span><br><span class="line">   sudo apt-get upgrade</span><br></pre></td></tr></table></figure>
+</code></pre>
+</li>
+<li><p>升级系统中的所有已安装软件包。</p>
+</li>
+<li><pre><code>sudo apt-get install libopencv-dev
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">6. 安装OpenCV库的开发文件。</span><br><span class="line"></span><br><span class="line">7. ```</span><br><span class="line">   sudo apt-get install libopencv-contrib-dev</span><br></pre></td></tr></table></figure>
+</code></pre>
+</li>
+<li><p>安装OpenCV贡献模块的开发文件。</p>
+</li>
+<li><pre><code>sudo apt-get update
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">10. 再次更新包管理器的软件包列表。</span><br><span class="line"></span><br><span class="line">11. ```</span><br><span class="line">    sudo apt-get install libproj-dev</span><br></pre></td></tr></table></figure>
+</code></pre>
+</li>
+<li><p>安装Proj库的开发文件，Proj库提供了地理投影转换的功能。</p>
+</li>
+<li><pre><code>sudo apt-get install libpcl-dev
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">14. 安装PCL（Point Cloud Library）库的开发文件，PCL库用于点云数据处理和分析。</span><br><span class="line"></span><br><span class="line">15. ```</span><br><span class="line">    sudo apt-get install libsdl1.2-dev</span><br></pre></td></tr></table></figure>
+</code></pre>
+</li>
+<li><p>安装SDL 1.2库的开发文件，SDL库用于创建图形用户界面和处理多媒体。</p>
+</li>
+<li><pre><code>sudo apt install libsdl-image1.2-dev
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">18. 安装SDL_image 1.2库的开发文件，SDL_image库提供了图像处理功能。</span><br><span class="line"></span><br><span class="line">19. ```</span><br><span class="line">    sudo apt-get install ros-kinetic-gmapping</span><br></pre></td></tr></table></figure>
+</code></pre>
+</li>
+<li><p>安装ROS Kinetic版本中的gmapping软件包，gmapping是用于构建占据栅格地图的SLAM算法。</p>
+</li>
+<li><pre><code>sudo apt-get install ros-kinetic-slam-gmapping
+</code></pre>
+</li>
+<li><p>安装ROS Kinetic版本中的slam_gmapping软件包，slam_gmapping提供了用于构建占据栅格地图的SLAM算法。</p>
+</li>
+</ol>
+</div><div class="article-licensing box"><div class="licensing-title"><p>基于ROS（机器人操作系统）的数据展示系统</p><p><a href="http://asgard-tim.github.io/2023/07/02/ROS Task/">http://asgard-tim.github.io/2023/07/02/ROS Task/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>明诚</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2023-07-02</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2023-08-03</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/C/">C++</a><a class="link-muted mr-2" rel="tag" href="/tags/ROS/">ROS</a><a class="link-muted mr-2" rel="tag" href="/tags/Linux/">Linux</a><a class="link-muted mr-2" rel="tag" href="/tags/Ubuntu/">Ubuntu</a></div><!--!--></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/img/wechat.jpg" alt="支付宝"></span></a><a class="button donate" data-type="wechat"><span class="icon is-small"><i class="fab fa-weixin"></i></span><span>微信</span><span class="qrcode"><img src="/img/alipay.jpg" alt="微信"></span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2023/08/02/index/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">Welcome to XJH&#039;s Secret Base!</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2023/06/25/QEA-Radar-Car/"><span class="level-item">小车路径规划</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div class="content" id="valine-thread"></div><script src="//cdn.jsdelivr.net/npm/leancloud-storage@3/dist/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine@1.4.16/dist/Valine.min.js"></script><script>new Valine({
+            el: '#valine-thread',
+            appId: "4YfCkg9RY2bBZosr2CIG3MbR-gzGzoHsz",
+            appKey: "yY6mlbvEevj97fBj9Ri4czpD",
+            placeholder: "请多指教",
+            avatar: "mm",
+            avatarForce: false,
+            meta: ["nick","mail","link"],
+            pageSize: 10,
+            lang: "zh-CN",
+            visitor: false,
+            highlight: true,
+            recordIP: false,
+            
+            
+            
+            enableQQ: false,
+            requiredFields: [],
+        });</script></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1 is-sticky"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar is-rounded" src="/img/head.jpg" alt="明诚"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">明诚</p><p class="is-size-6 is-block">走过的路，每一步都算数。</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>江苏 苏州</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">7</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">5</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">15</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/Asgard-Tim" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Weibo" href="https://www.weibo.com/u/6315188431"><i class="fab fa-weibo"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Bilibili" href="https://space.bilibili.com/171895120"><i class="fab fa-bilibili"></i></a></div></div></div><div class="card widget" data-type="links"><div class="card-content"><div class="menu"><h3 class="menu-label">链接</h3><ul class="menu-list"><li><a class="level is-mobile" href="https://jaguarliu.me/ai-projects" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">AI-Tools</span></span><span class="level-right"><span class="level-item tag">jaguarliu.me</span></span></a></li><li><a class="level is-mobile" href="https://hexo.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Hexo</span></span><span class="level-right"><span class="level-item tag">hexo.io</span></span></a></li><li><a class="level is-mobile" href="https://bulma.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Bulma</span></span><span class="level-right"><span class="level-item tag">bulma.io</span></span></a></li><li><a class="level is-mobile" href="https://zlibrary-east.se/" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Zlibrary</span></span><span class="level-right"><span class="level-item tag">zlibrary-east.se</span></span></a></li><li><a class="level is-mobile" href="https://www.cnki.net/" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">CNKI</span></span><span class="level-right"><span class="level-item tag">www.cnki.net</span></span></a></li><li><a class="level is-mobile" href="https://chat.openai.com/" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">ChatGPT</span></span><span class="level-right"><span class="level-item tag">chat.openai.com</span></span></a></li><li><a class="level is-mobile" href="https://www.iodraw.com/tool/sketch" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">照片转素描</span></span><span class="level-right"><span class="level-item tag">www.iodraw.com</span></span></a></li><li><a class="level is-mobile" href="https://www.integral-calculator.com/" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">积分计算器</span></span><span class="level-right"><span class="level-item tag">www.integral-calculator.com</span></span></a></li><li><a class="level is-mobile" href="https://cli.im/text" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">二维码生成器</span></span><span class="level-right"><span class="level-item tag">cli.im</span></span></a></li><li><a class="level is-mobile" href="https://5vmc.com/cps.html" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">鼠标点击速度测试</span></span><span class="level-right"><span class="level-item tag">5vmc.com</span></span></a></li><li><a class="level is-mobile" href="https://tool.sacdr.net/" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">音乐解锁</span></span><span class="level-right"><span class="level-item tag">tool.sacdr.net</span></span></a></li><li><a class="level is-mobile" href="http://patorjk.com/software/taag/#p=display&amp;f=Graffiti&amp;t=Type%20Something%20" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">文本转ASCII码艺术字生成器</span></span><span class="level-right"><span class="level-item tag">patorjk.com</span></span></a></li></ul></div></div></div><div class="column-right-shadow is-hidden-widescreen is-sticky"></div></div><div class="column column-right is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only order-3 is-sticky"><div class="card widget" id="toc" data-type="toc"><div class="card-content"><div class="menu"><h3 class="menu-label">目录</h3><ul class="menu-list"><li><a class="level is-mobile" href="#程序主要结构与算法分析"><span class="level-left"><span class="level-item">1</span><span class="level-item">程序主要结构与算法分析</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#任务一：用命令行窗口显示小车的IMU和里程计（odometry）数据"><span class="level-left"><span class="level-item">1.1</span><span class="level-item">任务一：用命令行窗口显示小车的IMU和里程计（odometry）数据</span></span></a></li><li><a class="level is-mobile" href="#任务二：用图形界面显示颜色相机和深度相机的数据（利用OpenCV库）"><span class="level-left"><span class="level-item">1.2</span><span class="level-item">任务二：用图形界面显示颜色相机和深度相机的数据（利用OpenCV库）</span></span></a></li><li><a class="level is-mobile" href="#任务三：用图形界面显示激光雷达的点云数据（利用PCL库）"><span class="level-left"><span class="level-item">1.3</span><span class="level-item">任务三：用图形界面显示激光雷达的点云数据（利用PCL库）</span></span></a></li><li><a class="level is-mobile" href="#任务四：自行选择一种高级算法（例如语义分割、三维重建、导航定位（SLAM）等），实现该算法（可以直接利用第三方库），将其集成到系统中"><span class="level-left"><span class="level-item">1.4</span><span class="level-item">任务四：自行选择一种高级算法（例如语义分割、三维重建、导航定位（SLAM）等），实现该算法（可以直接利用第三方库），将其集成到系统中</span></span></a></li></ul></li><li><a class="level is-mobile" href="#各功能部分构建过程与实现效果"><span class="level-left"><span class="level-item">2</span><span class="level-item">各功能部分构建过程与实现效果</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#1-系统界面"><span class="level-left"><span class="level-item">2.1</span><span class="level-item">1.系统界面</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#（1）登录界面"><span class="level-left"><span class="level-item">2.1.1</span><span class="level-item">（1）登录界面</span></span></a></li><li><a class="level is-mobile" href="#（2）功能选择界面"><span class="level-left"><span class="level-item">2.1.2</span><span class="level-item">（2）功能选择界面</span></span></a></li></ul></li><li><a class="level is-mobile" href="#2-各部分功能"><span class="level-left"><span class="level-item">2.2</span><span class="level-item">2.各部分功能</span></span></a></li><li><a class="level is-mobile" href="#3-Gmapping建图算法的实现"><span class="level-left"><span class="level-item">2.3</span><span class="level-item">3.Gmapping建图算法的实现</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#（1）msg数据类型查询"><span class="level-left"><span class="level-item">2.3.1</span><span class="level-item">（1）msg数据类型查询</span></span></a></li><li><a class="level is-mobile" href="#（2）启动Gmapping算法功能包"><span class="level-left"><span class="level-item">2.3.2</span><span class="level-item">（2）启动Gmapping算法功能包</span></span></a></li><li><a class="level is-mobile" href="#（3）编写回调函数，利用opencv库绘制2D地图"><span class="level-left"><span class="level-item">2.3.3</span><span class="level-item">（3）编写回调函数，利用opencv库绘制2D地图</span></span></a></li><li><a class="level is-mobile" href="#（4）建立节点并订阅-map话题，调用回调函数"><span class="level-left"><span class="level-item">2.3.4</span><span class="level-item">（4）建立节点并订阅/map话题，调用回调函数</span></span></a></li><li><a class="level is-mobile" href="#（5）建图结果"><span class="level-left"><span class="level-item">2.3.5</span><span class="level-item">（5）建图结果</span></span></a></li></ul></li></ul></li><li><a class="level is-mobile" href="#附录一：必要的库文件和头文件："><span class="level-left"><span class="level-item">3</span><span class="level-item">附录一：必要的库文件和头文件：</span></span></a></li><li><a class="level is-mobile" href="#附录二：安装各库文件的命令"><span class="level-left"><span class="level-item">4</span><span class="level-item">附录二：安装各库文件的命令</span></span></a></li></ul></div></div><style>#toc .menu-list > li > a.is-active + .menu-list { display: block; }#toc .menu-list > li > a + .menu-list { display: none; }</style><script src="/js/toc.js" defer></script></div><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/About-XJH/"><span class="level-start"><span class="level-item">About XJH</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/"><span class="level-start"><span class="level-item">课程项目</span></span><span class="level-end"><span class="level-item tag">5</span></span></a><ul><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95I/"><span class="level-start"><span class="level-item">定量工程设计方法I</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">工程原理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">软件设计</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li></ul></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><figure class="media-left"><a class="image" href="/2023/08/02/index/"><img src="/images/book.jpeg" alt="Welcome to XJH&#039;s Secret Base!"></a></figure><div class="media-content"><p class="date"><time dateTime="2023-08-02T11:52:30.000Z">2023-08-02</time></p><p class="title"><a href="/2023/08/02/index/">Welcome to XJH&#039;s Secret Base!</a></p><p class="categories"><a href="/categories/About-XJH/">About XJH</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2023/07/02/ROS%20Task/"><img src="/images/14.png" alt="基于ROS（机器人操作系统）的数据展示系统"></a></figure><div class="media-content"><p class="date"><time dateTime="2023-07-02T13:42:58.000Z">2023-07-02</time></p><p class="title"><a href="/2023/07/02/ROS%20Task/">基于ROS（机器人操作系统）的数据展示系统</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1/">软件设计</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2023/06/25/QEA-Radar-Car/"><img src="/images/radarcar/4-8.png" alt="小车路径规划"></a></figure><div class="media-content"><p class="date"><time dateTime="2023-06-24T21:56:58.000Z">2023-06-25</time></p><p class="title"><a href="/2023/06/25/QEA-Radar-Car/">小车路径规划</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95I/">定量工程设计方法I</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2023/05/28/life/"><img src="/images/book1.jpg" alt="生命是什么"></a></figure><div class="media-content"><p class="date"><time dateTime="2023-05-28T07:54:58.000Z">2023-05-28</time></p><p class="title"><a href="/2023/05/28/life/">生命是什么</a></p><p class="categories"><a href="/categories/About-XJH/">About XJH</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2023/05/19/boat/"><img src="/images/boat/4-18.png" alt="具有一定扶正能力的船舶设计"></a></figure><div class="media-content"><p class="date"><time dateTime="2023-05-19T06:18:58.000Z">2023-05-19</time></p><p class="title"><a href="/2023/05/19/boat/">具有一定扶正能力的船舶设计</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95I/">定量工程设计方法I</a></p></div></article></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2023/08/"><span class="level-start"><span class="level-item">八月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/07/"><span class="level-start"><span class="level-item">七月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/06/"><span class="level-start"><span class="level-item">六月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/05/"><span class="level-start"><span class="level-item">五月 2023</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/03/"><span class="level-start"><span class="level-item">三月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/C/"><span class="tag">C++</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/C51/"><span class="tag">C51</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/FPGA/"><span class="tag">FPGA</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/MATLAB/"><span class="tag">MATLAB</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/RANSAC/"><span class="tag">RANSAC</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/ROS/"><span class="tag">ROS</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/STM32/"><span class="tag">STM32</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Ubuntu/"><span class="tag">Ubuntu</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/XJH/"><span class="tag">XJH</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%95%E7%89%87%E6%9C%BA/"><span class="tag">单片机</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%AE%9A%E9%87%8F%E5%88%86%E6%9E%90/"><span class="tag">定量分析</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B0%8F%E8%BD%A6/"><span class="tag">小车</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%88%B9/"><span class="tag">船</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%B7%AF%E5%BE%84%E8%A7%84%E5%88%92/"><span class="tag">路径规划</span><span class="tag">1</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/title.png" alt="XJH&#039;s Secret Base" height="28"></a><p class="is-size-7"><span>&copy; 2023 明诚</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p><p class="is-size-7">© Copyright by XJH 此心安处是吾乡。</p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/chitose.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body></html>
