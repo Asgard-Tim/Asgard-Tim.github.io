@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="theme-color" content="#123456"><meta name="generator" content="Hexo 4.2.0"><title>心电信号采集与处理 - Homepage of Jinghua Xu</title><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#3273dc"><meta name="application-name" content="Homepage of Jinghua Xu"><meta name="msapplication-TileImage" content="/img/avatar.jpg"><meta name="msapplication-TileColor" content="#3273dc"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Homepage of Jinghua Xu"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="apple-touch-icon" sizes="144x144" href="/img/avatar.jpg"><meta name="description" content="1 实验需求分析1.1 项目背景介绍心电信号（Electrocardiogram, ECG）是反映心脏活动电生理变化的重要生物电信号，其特征包括心率、节律、波形等参数，能够直观反映心脏健康状况，在临床医学、健康监测和疾病预防中具有不可替代的作用。通过心电信号的测量与分析，可以检测心律失常、心肌缺血、心脏传导阻滞等异常，为心脏疾病的诊断和治疗提供关键支持；借助便携式和可穿戴设备，实时心电监测已成为健"><meta property="og:type" content="blog"><meta property="og:title" content="心电信号采集与处理"><meta property="og:url" content="http://asgard-tim.github.io/2024/12/31/ecg/"><meta property="og:site_name" content="Homepage of Jinghua Xu"><meta property="og:description" content="1 实验需求分析1.1 项目背景介绍心电信号（Electrocardiogram, ECG）是反映心脏活动电生理变化的重要生物电信号，其特征包括心率、节律、波形等参数，能够直观反映心脏健康状况，在临床医学、健康监测和疾病预防中具有不可替代的作用。通过心电信号的测量与分析，可以检测心律失常、心肌缺血、心脏传导阻滞等异常，为心脏疾病的诊断和治疗提供关键支持；借助便携式和可穿戴设备，实时心电监测已成为健"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="http://asgard-tim.github.io/images/ecg/media/image67.png"><meta property="article:published_time" content="2024-12-30T18:02:03.000Z"><meta property="article:modified_time" content="2025-03-02T17:27:56.470Z"><meta property="article:author" content="Tim"><meta property="article:tag" content="单片机"><meta property="article:tag" content="STM32"><meta property="article:tag" content="信号与系统"><meta property="article:tag" content="频谱分析"><meta property="article:tag" content="数字信号处理"><meta property="article:tag" content="心电信号采集"><meta property="article:tag" content="FreeRTOS"><meta property="article:tag" content="ADS1292"><meta property="article:tag" content="滤波器"><meta property="article:tag" content="FIR"><meta property="article:tag" content="IIR"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="http://asgard-tim.github.io/images/ecg/media/image67.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://asgard-tim.github.io/2024/12/31/ecg/"},"headline":"心电信号采集与处理","image":["http://asgard-tim.github.io/images/ecg/media/image67.png"],"datePublished":"2024-12-30T18:02:03.000Z","dateModified":"2025-03-02T17:27:56.470Z","author":{"@type":"Person","name":"Tim"},"publisher":{"@type":"Organization","name":"Homepage of Jinghua Xu","logo":{"@type":"ImageObject","url":"http://asgard-tim.github.io/img/title1.png"}},"description":"1 实验需求分析1.1 项目背景介绍心电信号（Electrocardiogram, ECG）是反映心脏活动电生理变化的重要生物电信号，其特征包括心率、节律、波形等参数，能够直观反映心脏健康状况，在临床医学、健康监测和疾病预防中具有不可替代的作用。通过心电信号的测量与分析，可以检测心律失常、心肌缺血、心脏传导阻滞等异常，为心脏疾病的诊断和治疗提供关键支持；借助便携式和可穿戴设备，实时心电监测已成为健"}</script><link rel="canonical" href="http://asgard-tim.github.io/2024/12/31/ecg/"><link rel="icon" href="/img/avatar.jpg"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/xt256.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --></head><body class="is-3-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/title1.png" alt="Homepage of Jinghua Xu" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">主页</a><a class="navbar-item" href="/archives">时间轴</a><a class="navbar-item" href="/categories">分类</a><a class="navbar-item" href="/tags">标签</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="GitHub" href="https://github.com">GitHub</a><a class="navbar-item" target="_blank" rel="noopener" title="Contect me on GitHub" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a><a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;"><i class="fas fa-list-ul"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-6-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2024-12-30T18:02:03.000Z" title="2024/12/31 02:02:03">2024-12-31</time>发表</span><span class="level-item"><time dateTime="2025-03-02T17:27:56.470Z" title="2025/3/3 01:27:56">2025-03-03</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a><span> / </span><a class="link-muted" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95II/">定量工程设计方法II</a></span><span class="level-item">2 小时读完 (大约13620个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">心电信号采集与处理</h1><div class="content"><h2 id="1-实验需求分析"><a href="#1-实验需求分析" class="headerlink" title="1 实验需求分析"></a>1 实验需求分析</h2><h3 id="1-1-项目背景介绍"><a href="#1-1-项目背景介绍" class="headerlink" title="1.1 项目背景介绍"></a>1.1 项目背景介绍</h3><p>心电信号（Electrocardiogram, ECG）是反映心脏活动电生理变化的重要生物电信号，其特征包括心率、节律、波形等参数，能够直观反映心脏健康状况，在临床医学、健康监测和疾病预防中具有不可替代的作用。通过心电信号的测量与分析，可以检测心律失常、心肌缺血、心脏传导阻滞等异常，为心脏疾病的诊断和治疗提供关键支持；借助便携式和可穿戴设备，实时心电监测已成为健康管理的重要手段，为心血管疾病高危人群提供预警，有助于降低发病率和致死率。此外，心电信号还是生物医学研究的重要工具，为心血管药物开发、人工心脏研究等领域提供了基础数据。在当前人口老龄化加剧和心血管疾病高发的背景下，心电信号测量与分析技术显得尤为重要。本项目旨在开发高精度的心电信号采集系统，结合课程中介绍的数字信号处理等专业知识，为心脏健康提供更加便捷和智能的监测方案，推动精准医疗与个性化健康管理的发展。</p>
+<h3 id="1-2-心电信号特征与设计需求"><a href="#1-2-心电信号特征与设计需求" class="headerlink" title="1.2 心电信号特征与设计需求"></a>1.2 心电信号特征与设计需求</h3><p>心脏内部产生的一系列非常协调的电刺激脉冲，使得心脏肌肉细胞有节奏的舒张和收缩，这些信号传递到人体表面的不同部位形成不同的电位差。通过仪器设备可以从体表检测到这些微弱的电位差信号，称之为心电信号。换言之，心电信号即为人体心脏细胞细胞膜产生的电势差。在医学上，医生往往需要通过心率与幅值等参数来初步判断患者的健康状况，因此实现高精度的心率与幅值测量是本项目中设计的心电信号采集与处理系统的核心功能。</p>
+<p><img src="/images/ecg/media/image2.png" alt="图1.1：心电信号简介"></p>
+<p>正常的心电信号频率范围为0.05Hz－100Hz，其能量集中在低频段，其中99％的能量集中在0Hz－35Hz。在其采集过程中容易受到各种干扰，主要分为三种：</p>
+<ul>
+<li><p>工频和工频的谐波频率干扰，工频频率在我国为50Hz；</p>
+</li>
+<li><p>肌颤噪声和采样电路参考电压引入的电源纹波等高频噪声，频率通常在100Hz以上；</p>
+</li>
+<li><p>呼吸基线漂移和采样引入的直流分量，频率一般分布在0-0.7Hz。</p>
+</li>
+</ul>
+<p>以上的各种干扰会对心电信号采集结果产生较大的影响，使得采集到的心电信号中出现许多杂波与噪声，这是我们所不希望看到的。因此，为提高心电信号的测量精度，需要设计相应的滤波器对传感器采集到的信号进行滤波，从而减小信号中的噪声震荡，提高心率与幅值测量的准确程度。特别的，由于参考电压受环境温度变化会产生一定的温漂，以及人的呼吸活动和电极滑动也导致基线漂移。这些干扰的频率很低，通常在几Hz以内，但和心电信号的有效频谱非常接近，因此需要过渡带较窄的IIR直流陷波器来消除干扰。</p>
+<p>基于心电信号的以上特性，对于该心电信号采集与处理系统，提出如下的技术指标需求：</p>
+<ul>
+<li><p>0频处的缓变直流衰减不低于30dB；</p>
+</li>
+<li><p>降噪滤波器以35Hz为3dB通带截止频率，过渡带不超过10Hz，阻带衰减不低于40dB；</p>
+</li>
+<li><p>心率估算误差不超过10%。</p>
+</li>
+</ul>
+<h2 id="2-实现方案论证"><a href="#2-实现方案论证" class="headerlink" title="2 实现方案论证"></a>2 实现方案论证</h2><h3 id="2-1-系统框架设计"><a href="#2-1-系统框架设计" class="headerlink" title="2.1 系统框架设计"></a>2.1 系统框架设计</h3><p>本项目的核心目标是实现心电信号的采集与滤波以及心率测量，同时需要在屏幕上绘制时域波形与频谱图。具体而言，细分的功能如下：</p>
+<ul>
+<li><p>实现ADS1292获取心电信号原始数据，并通过串口传输至PC电脑；</p>
+</li>
+<li><p>实现PC电脑中通过MATLAB对原始数据进行时域和频域分析；</p>
+</li>
+<li><p>实现PC电脑中通过MATLAB对原始数据进行降噪和提取心率；</p>
+</li>
+<li><p>实现STM32单片机中对原始数据进行降噪和提取心率；</p>
+</li>
+<li><p>TFT屏幕中绘制心电信号曲线和显示心率数值。</p>
+</li>
+</ul>
+<p>为实现以上功能，采用如下的系统设计流程：</p>
+<ol>
+<li><p>调试ADS1292R_PowerOnInit函数中的ADS1292芯片读取，通过读取芯片device_id验证硬件功能正常且连接正确；</p>
+</li>
+<li><p>在中断驱动下，读取ADS1292的原始数据，并存储在单片机的存储器中；</p>
+</li>
+<li><p>把原始数据传输到PC；</p>
+</li>
+<li><p>在PC中分析原始数据的时域和频域；</p>
+</li>
+<li><p>在PC中设计滤波器对原始数据进行处理，并提取心率等；</p>
+</li>
+<li><p>把PC中的滤波器移植到单片机中；</p>
+</li>
+<li><p>在单片机中把心电波形和心率等数据显示到TFT屏幕。</p>
+</li>
+</ol>
+<p><img src="/images/ecg/media/image3.png" alt="图2.1：系统设计流程"></p>
+<p>根据如上设计流程，结合目前提供的材料，设计了如下图所示的心电信号采集与分析系统：</p>
+<p><img src="/images/ecg/media/image4.png" alt="图2.2：系统框架"></p>
+<p>系统的工作流程如下：</p>
+<ol>
+<li><p>首先，STM32控制器向心电传感器发送采集指令，传感器随后采集来自人体或模拟信号源的心电信号，并将数据反馈至控制器；</p>
+</li>
+<li><p>接着，控制器将采集到的数据传输至PC端，供进一步分析处理；</p>
+</li>
+<li><p>然后，根据PC端的分析结果，控制器会调整参数并优化心电信号处理；</p>
+</li>
+<li><p>最终，处理后的结果将在TFT屏幕上实时显示，供用户查看。</p>
+</li>
+</ol>
+<p>可以看到，该系统主要涉及到STM32主控芯片、ADS1292R传感器、TFT显示屏、心电信号模拟器以及PC端分析软件MATLAB等关键组件。接下来将对于本项目涉及的各硬件组件进行介绍。</p>
+<h3 id="2-2-STM32主控芯片"><a href="#2-2-STM32主控芯片" class="headerlink" title="2.2 STM32主控芯片"></a>2.2 STM32主控芯片</h3><p>本项目选用的微控制器STM32F407ZG是系统的核心控制单元，负责协调各个模块的工作。其不仅负责信号的采集，还管理信号传输、滤波器应用、以及与TFT屏幕的显示操作。其强大的处理能力和灵活的控制方式使其成为整个系统的”大脑”。该控制器目前搭载在”正点原子”探索者STM32F407开发板V3上，负责完成系统的信号采集、处理与传输任务。</p>
+<p><img src="/images/ecg/media/image5.jpeg" alt="图2.3：STM32F407探索者开发板V3实物图正面"></p>
+<p>该单片机具备高性能的ARM Cortex-M4内核，主频高达168MHz，同时集成了丰富的外设接口，包括多个ADC通道、DMA（直接存储器访问）、定时器以及USART串口等，为心电信号的实时采集、处理与传输提供了强有力的硬件支持。它通过SPI协议与ADS1292传感器进行数据交换，采集来自人体或模拟信号源的心电信号，并进行初步处理。</p>
+<h3 id="2-3-心电信号模拟器"><a href="#2-3-心电信号模拟器" class="headerlink" title="2.3 心电信号模拟器"></a>2.3 心电信号模拟器</h3><p>在实验的过程中，无法总是以人体作为心电信号源，因此在缺乏人体数据的情况下，本项目采用SKX-2000心电信号模拟仪作为测试时的模拟信号源。它能够生成不同类型的心电波形，广泛用于测试系统性能和验证心电信号采集、处理的稳定性。此设备对确保系统在实际使用前达到预期的性能标准至关重要。</p>
+<p><img src="/images/ecg/media/image6.png" alt="图2.4：SKX-2000心电信号模拟仪"></p>
+<p><img src="/images/ecg/media/image7.png" alt="图2.5：SKX-2000心电信号模拟仪使用说明书"><img src="/images/ecg/media/image8.png" alt="图2.5：SKX-2000心电信号模拟仪使用说明书"></p>
+<p>在本项目中，主要使用到的是正常的心电波形与标准的心率信号，可以通过操作该模拟仪控制其产生心电信号的心率以及幅度。在连接方面，如图2.3所示，采用三导联接法，RA连接右手（红色），LA连接左手（黄色），LL连接左脚（绿色）；通过3.5耳机动态导联线，将模拟仪产生的心电信号输入ADS1292S传感器中以供进一步采集。</p>
+<h3 id="2-3-信号采集传感器：ADS1292R"><a href="#2-3-信号采集传感器：ADS1292R" class="headerlink" title="2.3 信号采集传感器：ADS1292R"></a>2.3 信号采集传感器：ADS1292R</h3><p>ADS1292R作为一款多通道同步采样的24位模数转换器（ADC），被广泛应用于生物电势测量领域，其独特的设计集成了可编程增益放大器、内部基准源和板载振荡器，确保了心电信号的精准采集。在本系统中，ADS1292R作为信号采集模块的核心组件，负责从心电电极捕获原始心电信号。这些信号随后通过SPI接口传输至STM32微控制器，供后续处理和分析。</p>
+<p><img src="/images/ecg/media/image9.jpeg" alt="图2.6：ADS1292R传感器实物图与电路原理图"><br><img src="/images/ecg/media/image10.png" alt="图2.6：ADS1292R传感器实物图与电路原理图">该模块共有12个输出引脚（传感器模块右侧)，各引脚接口功能说明如下：</p>
+<ul>
+<li><p>GND：接供电电源地；</p>
+</li>
+<li><p>CLK：提供给ADS1292R工作的外部时钟，由于本项目采用内部时钟，故该引脚无需连接；</p>
+</li>
+<li><p>GPIO1、GPIO2：本项目中未使用，无需连接</p>
+</li>
+<li><p>SPI_SCK：接入由STM32单片机提供的SPI时钟信号；</p>
+</li>
+<li><p>SPI_MISO：向STM32单片机发送SPI数据输入信号；</p>
+</li>
+<li><p>SPI_MOSI：接收STM32单片机发出的数据输出信号；</p>
+</li>
+<li><p>SPI_CS0：接入STM32单片机GPIO，为ADS1292R提供片选选中信号；</p>
+</li>
+<li><p>ADS_DRDY：向STM32单片机发送外部中断输入，告知单片机可以通过SPI接收采集信号；</p>
+</li>
+<li><p>ADS_START：接入STM32单片机GPIO，为ADS1292R提供开始采集信号；</p>
+</li>
+<li><p>ADS_PWDN：接入STM32单片机GPIO，为ADS1292R提供复位信号RESET；</p>
+</li>
+<li><p>+5V：接供电电源+5V（由STM32输出）。</p>
+</li>
+</ul>
+<p>除此之外，由于选用的STM32单片机只允许接收0~3.3V的输出电压，故单片机通过SPI通信接收的信号电压必须限制在该范围内，因此需要将ADS1292R传感器模块中间的VDD与3.3V引脚通过跳线帽相连以实现电压转换（与图2.5中左图的连接方式相反）。</p>
+<h3 id="2-4-SPI通信读取采集数据"><a href="#2-4-SPI通信读取采集数据" class="headerlink" title="2.4 SPI通信读取采集数据"></a>2.4 SPI通信读取采集数据</h3><p>在本系统中，传感器将数字化后的原始心电信号数据通过SPI接口传输到STM32微控制器。SPI通信具有高速度、全双工传输的优势，非常适合用于实时性要求较高的应用场景。SPI接口确保了心电信号数据的快速、稳定传输，保证了信号的实时处理和准确性。通过SPI，ADS1292R和STM32微控制器能够高效地交换数据，从而提升系统的整体性能和响应速度。</p>
+<p>SPI通信采用主从结构，其中STM32微控制器作为主设备，ADS1292R作为从设备。具体来说，SPI通信包括四个主要信号线：时钟信号（SCK）、主输出从输入（MOSI）、主输入从输出（MISO）和片选信号（CS）。时钟信号由STM32微控制器提供，用于同步数据传输。数据通过MOSI线从ADS1292R传输到STM32微控制器，而传感器通过MISO线将必要的反馈信息传回STM32。</p>
+<p><img src="/images/ecg/media/image11.png" alt="图2.7：SPI内部结构简图"></p>
+<p>为了提高系统的响应速度和处理效率，在单片机端选择了基于中断驱动的数据采集机制。当ADS1292R传感器完成一组心电数据的采集后，通过中断信号通知STM32F407进行数据读取和处理。这种机制有效减少了CPU的空闲时间，提高了系统的整体效率。</p>
+<p><img src="/images/ecg/media/image12.png" alt="图2.8：中断驱动SPI通信采集数据的系统框架简图"></p>
+<p>在单片机程序工程中，通过调用驱动库文件中的ADS1292_Read_Data函数，可以实现单片机与ADS1292R的数据交互以进行实时数据监测，并通过函数ADS1292_Send_CMD将信号数据通过UART串口以115200的波特率传输至PC端并保存。在此过程中，原始信号数据被保存为.dat格式的文件，后续将通过MATLAB读取和显示这些信号数据，并针对这些数据进行滤波器等模块的设计，对信号进行进一步验证与调试。</p>
+<p><img src="/images/ecg/media/image13.png" alt="图2.9：单片机实现读取原始信号数据的函数ADS1292_Read_Data"></p>
+<p><img src="/images/ecg/media/image14.png" alt="图2.10：单片机实现串口输出原始信号数据的函数ADS1292_Send_CMD"></p>
+<p><img src="/images/ecg/media/image15.png" alt="图2.11：PC端可视化软件中显示采集到的原始心电信号（解码后）"></p>
+<h2 id="3-理论推导与MATLAB计算"><a href="#3-理论推导与MATLAB计算" class="headerlink" title="3 理论推导与MATLAB计算"></a>3 理论推导与MATLAB计算</h2><p>PC端分析软件（本项目中使用MATLAB）用于对采集到的原始心电信号进行深入分析。为验证滤波器对心电信号的作用和效果，可以先在MATLAB上设计算法对心电信号进行一系列处理，包括数据读取、绘制原始数据时域波形、分析原始数据的频谱、设计数字直流陷波器、设计FIR数字低通滤波器、分析并比较滤波前后数据的频谱以及估算心率。通过这些分析，系统能够设计出合适的滤波器以去除噪声并提取出心率等重要参数，为后续移植到单片机上提供理论验证。</p>
+<h3 id="3-1-原始心电信号数据的读取与频谱分析"><a href="#3-1-原始心电信号数据的读取与频谱分析" class="headerlink" title="3.1 原始心电信号数据的读取与频谱分析"></a>3.1 原始心电信号数据的读取与频谱分析</h3><p>为了研究信号特征和评估处理效果，首先需要导入心电信号数据并进行基本分析。当心电信号传入单片机后，根据ADS1292R的数据手册，还需在单片机中对数据进行解码处理。在2.4节中，直接存入.dat文件的是未经过解码的原始数据，而图2.11展示的则是经过解码转换后的波形数据可视化结果（由单片机内部程序完成解码转换，将在4.2节中详细展开）。</p>
+<p><img src="/images/ecg/media/image16.png" alt="图3.1：MATLAB从串口读取信号数据并写入.dat文件的程序代码"></p>
+<p>本章中的MATLAB分析均基于未解码的.dat文件，因此要想获得真实的波形数据（电压值），需要先根据以下规则对数据进行解码（4.2中的解码基于同样的原理，后续不再赘述）：</p>
+<p>由于原始数据格式是24bits的二进制补码（7FFFFF对应的模拟信号是2.4V。800000对应的模拟信号是-2.4V），若考虑保留高16bits，需要注意此时为补码，同时也要考虑到16bits相比于24bits相当于右移了8位。所以此时7FFF的数值对应模拟信号相当于2.4V，8000对应模拟信号-2.4V。</p>
+<p><img src="/images/ecg/media/image17.png" alt="图3.2：原始信号电压与读取信号数据间的关系"></p>
+<p>基于这样的规则，可以在MATLAB编写对应的接收数据代码，从文件中读取数据（注意把负数的二进制补码转换为原码），其中Off可以为0或1（因为MATLAB接收的起始数据可能是16bits的高8位或者低8位，用off作为偏移调整，这样组合的数据才不会出现错位）；同时通过plot函数绘制出原始心电信号的时域波形，并使用快速傅里叶变换（FFT）分析信号频谱，绘制出频谱图。</p>
+<p><img src="/images/ecg/media/image18.png" alt="图3.3：原始心电信号数据解码读取、时域波形绘制与频谱分析绘制MATLAB代码"></p>
+<p><img src="/images/ecg/media/image19.png" alt="图3.4：原始心电信号时域波形与频谱"><img src="/images/ecg/media/image20.png" alt="图3.4：原始心电信号时域波形与频谱"></p>
+<p>从频谱图（上右图）中可以明显观察到信号中的低频基线漂移和工频干扰（与1.2节中的分析基本一致），这些成分需要通过滤波器加以去除。</p>
+<h3 id="3-2-IIR数字直流陷波器设计与滤波效果"><a href="#3-2-IIR数字直流陷波器设计与滤波效果" class="headerlink" title="3.2 IIR数字直流陷波器设计与滤波效果"></a>3.2 IIR数字直流陷波器设计与滤波效果</h3><p>工程中使用高精度传感器采集动态信号，采集的原始数据会因为环境变化、量化字长和参考电压等因素，包含较强的缓变直流分量，如果不予以消除，会导致在降噪等处理中出现运算饱和溢出。由于在采集心电信号时，人的呼吸活动和电极滑动会导致基线漂移，而这些干扰的频率又与心电信号的有效频谱非常接近，因此需要设计窄带IIR直流陷波器来消除该干扰。</p>
+<p>直流陷波器的传递函数Η(z)为：<br>$$<br>Η(z) &#x3D; \frac{z - 1}{z - a}<br>$$<br>该数字系统的极点为z &#x3D; a，零点为z&#x3D;1，其中参数a决定了陷波器的过渡带宽和衰减性能，为接近1的正实数。因为零点对应的幅角ω &#x3D; 0，所以数字系统在零频处的增益显著衰减（如图3.5所示），其衰减的程度与过渡带的宽度和极点a的数值有关：a越大衰减变小，同时过渡带变窄，反之则衰减增大和过渡带增宽。通过实验调整，选择a&#x3D;0.992可在基线漂移和信号完整性之间取得平衡。</p>
+<p><img src="/images/ecg/media/image21.png" alt="图3.5：a=0.992时直流陷波器H(z)的增益和相位特性"></p>
+<p><img src="/images/ecg/media/image22.png" alt="图3.6：IIR数字直流陷波器设计及滤波后频谱分析绘制MATLAB代码及其运行结果"><br><img src="/images/ecg/media/image23.png" alt="图3.6：IIR数字直流陷波器设计及滤波后频谱分析绘制MATLAB代码及其运行结果"></p>
+<p>可以看到，在加入了直流陷波器进行滤波后，0频处的基线漂移基本被消除，说明该滤波器的设计有效并起到了很好的效果。</p>
+<h3 id="3-3-FIR数字低通滤波器设计与滤波效果"><a href="#3-3-FIR数字低通滤波器设计与滤波效果" class="headerlink" title="3.3 FIR数字低通滤波器设计与滤波效果"></a>3.3 FIR数字低通滤波器设计与滤波效果</h3><p>根据阻带衰减不低于40dB且过渡带不超过10Hz的要求，利用MATLAB中自带的filterDesigner滤波器设计工具对于FIR数字低通滤波器进行设计。在该滤波器中，采用固定窗口，通过对当前点及其前160个点的加权求和来计算输出（指定滤波器阶数为160）。</p>
+<p>在固定窗口的选择上，由于不同窗函数的阻带最小衰减各不相同，过渡带应与对应窗函数的”精确过渡带宽”相等。以下是常用窗函数的对比表：</p>
+<p>表3.1 不同窗函数的阻带最小衰减</p>
+<table>
+<thead>
+<tr>
+<th>窗函数</th>
+<th>第一旁瓣衰减A&#x2F;dB</th>
+<th>近似过渡带宽Bw</th>
+<th>精确过渡带宽</th>
+<th>旁瓣峰值衰减&#x2F;(dB * oct^(- 1))</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>矩形窗</td>
+<td>-13</td>
+<td>4π&#x2F;N</td>
+<td>1.8π&#x2F;N</td>
+<td>21</td>
+</tr>
+<tr>
+<td>汉宁窗</td>
+<td>-31</td>
+<td>8π&#x2F;N</td>
+<td>6.2π&#x2F;N</td>
+<td>44</td>
+</tr>
+<tr>
+<td>海明窗</td>
+<td>-41</td>
+<td>8π&#x2F;N</td>
+<td>6.6π&#x2F;N</td>
+<td>53</td>
+</tr>
+<tr>
+<td>布莱克曼窗</td>
+<td>-57</td>
+<td>12π&#x2F;N</td>
+<td>11π&#x2F;N</td>
+<td>74</td>
+</tr>
+<tr>
+<td>凯泽窗(β &#x3D; 7.865)</td>
+<td>-57</td>
+<td></td>
+<td>10π&#x2F;N</td>
+<td>80</td>
+</tr>
+</tbody></table>
+<p>在实际设计中，选择Chebyshev（切比雪夫）窗，其主要特点为：在给定窗口长度的情况下，能够提供最小的主瓣宽度。因此，通过选用Chebyshev窗，在频域上最小化主瓣的振幅波动，以实现滤波器的设计。</p>
+<p>除此之外，设计时还指定采样频率为500Hz，阻带频率设计为35Hz，确定好参数后可在filterDesigner工具中导出为MATLAB函数：</p>
+<p><img src="/images/ecg/media/image24.png" alt="图3.7：基于filterDesigner工具的FIR数字低通滤波器设计及其生成的MATLAB代码"><img src="/images/ecg/media/image25.png" alt="图3.7：基于filterDesigner工具的FIR数字低通滤波器设计及其生成的MATLAB代码"></p>
+<p>在主程序中调用生成的滤波器函数构造一个FIR数字低通滤波器实例，并利用filter函数对于直流陷波后的波形数据进行FIR滤波并通过plot函数绘制滤波后的频谱，代码与结果如下所示：</p>
+<p><img src="/images/ecg/media/image26.png" alt="图3.8：信号经FIR数字低通滤波后频谱分析绘制MATLAB代码及其运行结果"><img src="/images/ecg/media/image27.png" alt="图3.8：信号经FIR数字低通滤波后频谱分析绘制MATLAB代码及其运行结果"></p>
+<p>可以看到，在加入了数字低通滤波器进行滤波后，50Hz处的工频干扰完全被消除，说明该滤波器的设计有效并起到了很好的效果。</p>
+<h3 id="3-4-滤波结果综合分析"><a href="#3-4-滤波结果综合分析" class="headerlink" title="3.4 滤波结果综合分析"></a>3.4 滤波结果综合分析</h3><p>通过IIR和FIR滤波器的级联处理，最终获得了较为清晰的心电信号波形（如图3.9所示）。此过程有效去除了干扰，为后续心率计算和信号分析提供了可靠的基础。</p>
+<p><img src="/images/ecg/media/image28.png" alt="图3.9 滤波后心电图结果"><img src="/images/ecg/media/image29.png" alt="图3.9 滤波后心电图结果"></p>
+<p><img src="/images/ecg/media/image30.png" alt="图3.10 信号频谱对比图"><img src="/images/ecg/media/image31.png" alt="图3.10 信号频谱对比图"></p>
+<p>为了更直观地展示信号处理过程的效果，对心电信号在各个处理阶段的频谱进行了对比分析。图3.10中显示了原始心电信号以及经过直流陷波器和FIR低通滤波器联合处理后的信号频谱图。</p>
+<p>从原始心电信号频谱可以看出，信号中存在显著的工频干扰（约50Hz）和低频基线漂移（频率较低）。此外，信号还包含较多高频噪声，影响了心电信号的质量。经过直流陷波器处理后，低频基线漂移明显被抑制，低频成分显著减少但同时工频干扰和高频噪声依然存在，但其幅值未发生明显变化，表明直流陷波器主要对低频干扰起到作用；在应用FIR低通滤波器后，信号中50Hz附近的工频干扰被有效抑制，同时高频噪声也显著减弱。</p>
+<p>最终处理后的频谱显示出清晰的心电信号主频成分（低于30Hz），为后续的R波检测与心率计算提供了可靠的基础。</p>
+<h3 id="3-5-心率计算"><a href="#3-5-心率计算" class="headerlink" title="3.5 心率计算"></a>3.5 心率计算</h3><p>在对原始心电信号完成滤波处理后，可进一步估算心率这一关键生理参数。心率的计算基于心电信号中的R波峰值检测，通过分析相邻R波之间的R-R间期推算心率值。R波的检测是心率估算的关键环节。在此实验中，采用MATLAB函数findpeaks来检测心电信号中的峰值。为提高检测精度，将滤波后的信号进行缩放，并设置峰值检测的阈值为信号均值加一倍标准差。</p>
+<p>检测到R波位置后，可通过计算相邻峰值位置之间的时间间隔（R-R间期）来估算心率。使用diff函数计算相邻R波的时间间隔并计算R-R间期的平均值，并根据如下公式计算出心率：</p>
+<p>$$<br>心率 &#x3D; \frac{60}{平均R - R间期}<br>$$<br><img src="/images/ecg/media/image32.png" alt="图3.11 MATLAB心率计算代码"></p>
+<p>最终得出结果为60.29bpm，对比实际信号发生仪60bmp的心率，可以较为准确地估算心率，其结果符合误差小于10%的预期。</p>
+<h2 id="4-STM32程序设计与参数选择"><a href="#4-STM32程序设计与参数选择" class="headerlink" title="4 STM32程序设计与参数选择"></a>4 STM32程序设计与参数选择</h2><p>项目代码已推送至Github远程仓库：<a target="_blank" rel="noopener" href="https://github.com/Asgard-Tim/ECG_Final_Project">Asgard-Tim&#x2F;ECG_Final_Project</a></p>
+<h3 id="4-1-单片机程序架构设计"><a href="#4-1-单片机程序架构设计" class="headerlink" title="4.1 单片机程序架构设计"></a>4.1 单片机程序架构设计</h3><p>为实现2.1节所提出的基本功能，除了要采集心电数据并对其进行滤波、显示时域波形外，还需要对滤波后的波形进行频谱分析并显示。为了更高效地完成这一过程，系统引入了快速傅里叶变换（FFT）算法，用于将时域信号转化为频域信号，便于分析信号的频谱特性。然而，由于FFT计算量较大，尤其是在较高采样率下，需要处理大量的点，因此为了加快运行速度，程序采用了FreeRTOS实时操作系统，分别对信号滤波和频谱分析进行任务划分和并行处理。</p>
+<p><img src="/images/ecg/media/image33.png" alt="图4.1 单片机程序工程基本工作框架"></p>
+<p>在系统的实现中，FreeRTOS将任务分为信号采集与滤波任务ECG和FFT计算任务。如上图所示，信号采集任务负责从ADS1292R中读取原始心电信号，并完成IIR和FIR滤波的处理，将滤波后的数据存储到循环缓冲区中，通过中断驱动的方式与传感器交互，确保数据的实时性和可靠性；而FFT计算任务则专注于对缓冲区中的数据进行频谱分析，每当缓冲区填满指定数量的数据点时，FFT计算任务将被启动，这虽然会导致实际运行时FFT频谱更新会产生一定的延时，但这样的设计将使得整个系统的工作更加稳定可控。</p>
+<p>通过引入FreeRTOS，系统充分利用了单片机的多任务并行能力，使信号滤波和频谱分析的运行效率大幅提升，同时保证了心电信号处理的实时性。滤波和频谱分析的结合，不仅提高了信号的可用性，还为后续的心率计算和心电异常检测提供了更加丰富和可靠的数据支持。</p>
+<h3 id="4-2-采集原始数据解码"><a href="#4-2-采集原始数据解码" class="headerlink" title="4.2 采集原始数据解码"></a>4.2 采集原始数据解码</h3><p>通过SPI接口，STM32微控制器不断与ADS1292R传感器进行交互，读取其输出的24位数字信号数据。基于3.1节提到的价码规则，将读取到的数据经过必要的解码和处理后，可将其转换为实际的电压值，并进一步用于实时显示与分析。其核心代码如下所示：</p>
+<p><img src="/images/ecg/media/image34.png" alt="图4.2 ADS1292R原始数据解码核心代码"><img src="/images/ecg/media/image35.png" alt="图4.2 ADS1292R原始数据解码核心代码"></p>
+<p>在具体实现中，通过将ADS1292R的24位原始数据解码为32位有符号整数，消除了符号位可能引起的误差。随后，将解码后的信号根据增益和参考电压转换为实际的电压值。这一过程中，左导联和右导联的连接状态也会被实时检测，以确保数据采集的可靠性。如果导联连接异常（如电极松动），系统会发出提示并暂停后续的采集。</p>
+<h3 id="4-3-处理算法移植：滤波器"><a href="#4-3-处理算法移植：滤波器" class="headerlink" title="4.3 处理算法移植：滤波器"></a>4.3 处理算法移植：滤波器</h3><p>经过STM32接收心电信号后，系统根据PC端设计好的滤波器方案对原始信号进行双重滤波处理，先通过IIR滤波器消除直流分量，然后利用FIR滤波器进一步去除高频噪声，从而得到更为清晰的心电信号。经过IIR和FIR滤波后的信号显著改善，直流漂移、工频干扰以及高频噪声均被有效抑制，这一改进不仅提高了信号的可分析性，也为后续的特征提取与心率计算打下了坚实基础。</p>
+<p>滤波后，处理得到的心电信号被传输至PC端，并通过可视化工具显示其改进的波形。如下图所示，信号的基线漂移已完全消除，高频噪声也显著减弱。滤波后的心电信号为后续的心率估算和其他心电特征分析提供了高质量的数据输入，从而提升了系统的整体性能和实用性。</p>
+<p><img src="/images/ecg/media/image36.png" alt="图4.3：PC端可视化软件中显示采集到的滤波后心电信号（解码后）"></p>
+<h4 id="4-3-1-IIR数字直流陷波器"><a href="#4-3-1-IIR数字直流陷波器" class="headerlink" title="4.3.1 IIR数字直流陷波器"></a>4.3.1 IIR数字直流陷波器</h4><p>在IIR滤波阶段，STM32程序参考了PC端的滤波器设计，实现了高效的实时滤波。IIR滤波器的核心算法通过递归关系计算当前输出值，其中参数a&#x3D;0.992控制直流分量的衰减程度。算法以较少的存储空间完成了对信号直流漂移的有效抑制，使用上一输入与上一输出值的递归关系更新当前输出值，从而达到实时滤波的目的。</p>
+<p><img src="/images/ecg/media/image37.png" alt="图4.4：IIR数字直流陷波器单片机C语言代码"></p>
+<h4 id="4-3-2-FIR数字低通滤波器"><a href="#4-3-2-FIR数字低通滤波器" class="headerlink" title="4.3.2 FIR数字低通滤波器"></a>4.3.2 FIR数字低通滤波器</h4><p>经过IIR滤波后，信号中的直流分量被有效去除，但仍可能含有工频干扰和其他高频噪声。因此，信号会进一步通过FIR滤波器进行处理。FIR滤波器利用一个固定长度的滑动队列实现，其滤波系数矩阵B由MATLAB中的filterDesigner工具生成并导出到C代码中。该滤波运算采用定点方式，在初始化时需要将滤波器系数乘以66536（如图4.5中右图所示），再取整保存为16bits整数。该部分的核心算法是，通过遍历队列数据与滤波器系数进行逐项乘积累加，实现对信号的精准滤波。代码设计充分考虑了队列操作的效率，通过队列循环的方式减少内存消耗并保证实时性。</p>
+<p><img src="/images/ecg/media/image38.png" alt="图4.5：filterDesigner导出系数矩阵B的部分结果及FIR滤波器参数初始化"><br><img src="/images/ecg/media/image39.png" alt="图4.5：filterDesigner导出系数矩阵B的部分结果及FIR滤波器参数初始化"></p>
+<p><img src="/images/ecg/media/image40.png" alt="图4.6：FIR数字低通滤波器核心算法单片机C语言代码"></p>
+<h3 id="4-4-处理算法移植：心率与幅值计算"><a href="#4-4-处理算法移植：心率与幅值计算" class="headerlink" title="4.4 处理算法移植：心率与幅值计算"></a>4.4 处理算法移植：心率与幅值计算</h3><p>系统的心跳检测功能基于心电信号的峰谷变化，通过heartbeat_check函数实现对R波峰值的实时检测。该函数采用简单高效的阈值法，以波峰和波谷之间的差值判断是否发生心跳事件。函数的核心逻辑包括记录当前波形的上升和下降趋势，以及动态调整波峰（up_value）和波谷（down_value）的值。</p>
+<p>具体来说，当检测到波形从下降趋势转为上升趋势，且波峰与波谷的差值超过设定的阈值（经过调试设置为0.55较为合适），即判定为一次心跳事件。此时，波峰和波谷会重新初始化，为下一次心跳检测做好准备。如果当前波形变化幅度未达到阈值，则认为是噪声或非心跳波形，函数返回0。</p>
+<p>在实际应用中，该函数与DWT模块配合使用，每次心跳事件发生时记录时间戳，通过计算相邻两次事件的时间间隔（R-R间期）估算心率。高精度的DWT计数器和简洁的心跳检测算法相结合，使得系统能够在保证实时性的同时，准确识别心跳并计算心率。</p>
+<p><img src="/images/ecg/media/image41.png" alt="图4.7：单次心跳检测函数heartbeat_check代码"></p>
+<p><img src="/images/ecg/media/image42.png" alt="图4.8：心率计算函数calc_heartbeat_rate代码（基于单次心跳的检测结果）"></p>
+<p>为衡量心率信号的幅值范围，编写函数 Cal_PeakToPeak 以计算一组浮点数数据的峰峰值，即数据中的最大值与最小值之间的差值，用以反映数据的动态范围或振幅。函数通过接收一个浮点数数组 samples 和数组中的元素个数 sample_count 作为输入，首先将数组的第一个元素初始化为当前的最大值和最小值，然后从第二个元素开始逐一遍历整个数组。在遍历过程中，函数逐步更新最大值 max 和最小值 min，确保能够捕获数据中的真实极值。遍历完成后，函数通过计算 max - min 得到峰峰值，并将结果作为返回值。整个过程采用单次遍历的方法，计算效率较高，适合处理较大规模的采样数据。</p>
+<p><img src="/images/ecg/media/image43.png" alt="图4.9：幅值检测函数Cal_PeakToPeak代码"></p>
+<h3 id="4-5-TFT屏幕绘制采集波形"><a href="#4-5-TFT屏幕绘制采集波形" class="headerlink" title="4.5 TFT屏幕绘制采集波形"></a>4.5 TFT屏幕绘制采集波形</h3><p>TFT屏幕是系统的重要输出模块，负责实时显示处理后的心电波形和心率数据。通过高分辨率和快速刷新率，TFT屏幕能够清晰呈现心电信号的变化，供用户随时监控自己的心脏健康状况。它不仅显示心电波形，还提供当前的心率和可能的异常信号提示，帮助用户及时发现问题。</p>
+<p><img src="/images/ecg/media/image44.png" alt="图4.10 2.8寸TFT LCD电阻触摸屏模块320\*240实物图"></p>
+<p>对于已经滤波后的心电信号，在移植并调用原有LCD驱动库的基础上，编写了drawCurve函数实现实时的波形显示。该函数根据输入的心电信号数值，将其映射到屏幕的像素坐标，并绘制出连续的曲线。</p>
+<p><img src="/images/ecg/media/image45.png" alt="图4.11：TFT屏幕波形绘制函数drawCurve代码"></p>
+<p>可以看到，对于滤波后的心电信号值，除了基本的指定区域绘制波形外，为避免波形超出屏幕边界，还对计算得到的y坐标进行上下限约束，使其始终位于屏幕的有效显示区域内：如果y坐标超过屏幕范围，则自动截断至边界位置；当x坐标超出屏幕宽度时，程序清空屏幕并从起始位置重新开始绘制新的波形。通过这种循环显示方式，确保波形在屏幕上以滚动形式连续更新，为实时心电信号的监测提供直观的显示效果。</p>
+<h3 id="4-6-频谱分析及其TFT屏幕绘制"><a href="#4-6-频谱分析及其TFT屏幕绘制" class="headerlink" title="4.6 频谱分析及其TFT屏幕绘制"></a>4.6 频谱分析及其TFT屏幕绘制</h3><p>在频谱FFT计算的具体实现中，程序使用CMSIS-DSP库提供的高效FFT算法，首先将心电信号数据打包为复数输入，其中实部为滤波后的心电数据，虚部置为零。随后调用arm_cfft_radix4_f32函数完成快速傅里叶变换，并通过arm_cmplx_mag_f32函数计算复数频谱的幅值。计算结果存储在FFT输出缓冲区中，用于后续的频谱绘制。</p>
+<p><img src="/images/ecg/media/image46.png" alt="图4.12：频谱计算（FFT）函数FFT_Calculate代码"></p>
+<p>对于频域波形，系统通过FFT算法计算心电信号的频率分量，并将其可视化为频谱图。频谱图的x轴代表频率，y轴代表频率分量的幅值，能够直观反映心电信号的频率特性。频域波形的可视化主要依赖Draw_Spectrum函数：</p>
+<p><img src="/images/ecg/media/image47.png" alt="图4.13：频谱绘制函数Draw_Spectrum代码"></p>
+<p>由于屏幕高度有限，为避免绘图时坐标溢出，函数将FFT输出的幅值限制在合理范围内（0到150，其余位置留给时域波形）。当幅值超过上限或低于下限时，进行截断处理。每个频率分量对应一条垂直线，从屏幕底部开始绘制到计算得到的y坐标。</p>
+<h2 id="5-程序测试方法"><a href="#5-程序测试方法" class="headerlink" title="5 程序测试方法"></a>5 程序测试方法</h2><h3 id="5-1-ADS1292R驱动移植及引脚配置"><a href="#5-1-ADS1292R驱动移植及引脚配置" class="headerlink" title="5.1 ADS1292R驱动移植及引脚配置"></a>5.1 ADS1292R驱动移植及引脚配置</h3><p>首先，在通过STM32CubeMX创建工程时，需要配置单片机的时钟速率，SPI接口，中断以及UART串口通信等。为实现与ADS1292R传感器的数据传输，选用SPI1并对引脚进行如下配置：</p>
+<p><img src="/images/ecg/media/image48.png" alt="图5.1：SPI1引脚与参数配置"></p>
+<p>其中与ADS1292R传感器通信的SPI接口配置为主模式，时钟极性为CPOL&#x3D;LOW，时钟相位为CPHA&#x3D;2EDGE，数据帧格式为8位，通信速率依据传感器要求设置在8MHz以下，此处设置为656.25Kbit&#x2F;s。</p>
+<p>此外，还需要根据ADS1292R库文件中的说明，对UART通信进行设置，其中波特率设置为115200，8位数据位，1位停止位，无校验。</p>
+<p><img src="/images/ecg/media/image49.png" alt="图5.2：UART引脚与参数配置"></p>
+<p>完成引脚配置后就可以进行初始代码生成。在生成的初始代码工程中，引入ADS1292R的相关库文件（ADS1292R.c与ADS1292R.h），根据对应的配置代码将STM32F407开发板与ADS1292R传感器模块进行连线：</p>
+<p><img src="/images/ecg/media/image50.png" alt="图5.3：ADS1292R.h与spi.c代码文件中关于连线的相关说明"><img src="/images/ecg/media/image51.png" alt="图5.3：ADS1292R.h与spi.c代码文件中关于连线的相关说明"></p>
+<p><img src="/images/ecg/media/image52.jpeg" alt="图5.4：连线实物图"><br><img src="/images/ecg/media/image53.jpeg" alt="图5.4：连线实物图"></p>
+<p>连线完成后，要通过SPI接口实现与ADS1292R的数据交互，还需要在主程序中完成相应的初始化，即调用ADS1292R驱动库中的相关函数，由单片机向ADS1292R发送相应的命令以启动数据采集，并配置工作模式、采样速率、增益等参数。根据ADS1292R数据手册及项目要求，以下是对ADS1292R的主要配置过程：</p>
+<p><img src="/images/ecg/media/image54.png" alt="图5.5：函数ADS1292_PowerOnInit中对于ADS1292R的基本配置代码"></p>
+<p>首先，将ADS1292R的CONFIG2寄存器配置为0xA3，以启用内部参考电压。内部参考电压的稳定性对于后续心电信号的准确采集至关重要，因此在配置完成后需通过DWT_Delay_ms(10)添加延时，确保内部参考电压稳定。随后，将CONFIG1寄存器设置为0x02，配置心电采集的采样速率为500SPS（Samples Per Second），这一速率能够兼顾信号的时域分辨率和数据量。</p>
+<p>接下来，对通道1和通道2进行配置。其中，通道1的CH1SET寄存器设置为0x00，表示通道1工作于正常采集模式，且未启用测试信号输入。通道2的CH2SET寄存器配置为0x05，用于指定通道2采集来自内部测试信号的方波，方便在调试阶段验证系统的采集和传输功能。</p>
+<p>此外，为了进一步优化信号的质量，对右腿驱动（RLD）电极进行了配置，通过将RLD_SENS寄存器设置为0x2C，使右腿驱动电极同时连接到通道1和通道2，增强了共模信号的抑制能力。在呼吸阻抗测量相关功能中，将RESP1和RESP2寄存器分别配置为0x02和0x03，根据手册要求开启适当的工作模式。</p>
+<p>通过上述配置，ADS1292R可以稳定运行于双通道心电采集模式，通道1用于实时采集患者的心电信号，通道2可用于采集ADS1292R传感器的测试信号以验证该传感器模块是否被正常驱动。</p>
+<h3 id="5-2-ADS1292R驱动移植验证：读取传感器设备ID"><a href="#5-2-ADS1292R驱动移植验证：读取传感器设备ID" class="headerlink" title="5.2 ADS1292R驱动移植验证：读取传感器设备ID"></a>5.2 ADS1292R驱动移植验证：读取传感器设备ID</h3><p>事实上，在ADS1292_PowerOnInit函数中，图5.5所示初始化代码之前还有一段代码：</p>
+<p><img src="/images/ecg/media/image55.png" alt="图5.6：ADS1292_PowerOnInit初始化函数部分代码"></p>
+<p>可以看到，要实现5.1节中对于ADS1292R传感器模块的正确驱动，就必须要顺利运行该段代码，其中调用了ADS1292_ReadDeviceID这一函数并设置了判断条件，若读取到的设备ID不为83（ADS1292）或115（ADS1292R）则会一直循环读取ID而不进行后续的初始化，以确保读取的心电信号不会出现无效数据且采集数据符合预期格式。由于本次项目使用的传感器芯片为ADS1292R，故成功读取到并在串口助手中打印的device_id为115，这也证明驱动库文件的移植是正确的且能正常驱动该传感器模块。</p>
+<h3 id="5-3-ADS1292R驱动移植验证：测试信号采集及其TFT屏幕绘制"><a href="#5-3-ADS1292R驱动移植验证：测试信号采集及其TFT屏幕绘制" class="headerlink" title="5.3 ADS1292R驱动移植验证：测试信号采集及其TFT屏幕绘制"></a>5.3 ADS1292R驱动移植验证：测试信号采集及其TFT屏幕绘制</h3><p>在ADS1292R的芯片数据手册中，给出了其内置测试信号的相关参数：</p>
+<p><img src="/images/ecg/media/image56.png" alt="图5.7：ADS1292R芯片手册测试信号部分"></p>
+<p>可以看到，当PGA增益倍数设置为1时，芯片将输出测试方波信号，通过MATLAB读取并解码原始数据，得到（含直流）范围在-20到8；而去除直流后，该方波动态范围为-14到14。由于参考电压为2.4V（16bits），此时14&#x2F;32768*2400mv<br>约等于1mv，说明此时方波动态范围转换为电压是正负1mv，和数据手册说明一致。方波测试信号的成功读取也进一步验证了ADS1292R驱动库移植的正确性且能正常驱动该传感器模块。</p>
+<p><img src="/images/ecg/media/image57.png" alt="图5.8：MATLAB读取测试方波结果"></p>
+<p>图5.8：MATLAB读取测试方波结果</p>
+<h2 id="6-实验数据记录与分析"><a href="#6-实验数据记录与分析" class="headerlink" title="6 实验数据记录与分析"></a>6 实验数据记录与分析</h2><p>演示视频链接：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1HWCkYzETe/">https://www.bilibili.com/video/BV1HWCkYzETe/</a></p>
+<h3 id="6-1-测试信号采集"><a href="#6-1-测试信号采集" class="headerlink" title="6.1 测试信号采集"></a>6.1 测试信号采集</h3><p>在测试ADS1292的内部方波信号时，设置PGA增益为1，测试结果显示方波波形良好，基本无误差。系统能够准确读取方波信号的峰峰值和幅度值，其效果如图所示：</p>
+<p><img src="/images/ecg/media/image58.jpeg" alt="图6.1：采集测试信号在LCD屏幕上的显示效果（测量幅度值为155）"></p>
+<p>此外，系统新增了按键功能，按压KEY_0即可实现在显示测试信号波形与显示心电信号波形间切换。</p>
+<h3 id="6-2-模拟器心电信号采集"><a href="#6-2-模拟器心电信号采集" class="headerlink" title="6.2 模拟器心电信号采集"></a>6.2 模拟器心电信号采集</h3><p>在实际运行中，drawCurve函数结合系统滤波模块的输出数据和心跳检测结果，将心电信号时域与频域的动态变化以实时曲线的形式绘制在屏幕上。同时，在屏幕上显示心率、波幅等关键参数，进一步增强了系统的直观性和信息量。其效果如下图所示：</p>
+<p><img src="/images/ecg/media/image59.jpeg" alt="图6.2：BPM为60的心电信号（模拟器产生）在LCD屏幕上的显示效果"></p>
+<p>经过测试，测算出的心率值与心电模拟仪中给出的心率值误差不超过3 BPM（每分钟心跳数），满足系统设计需求；但此时滤波器的滤波效果有点过度，也可能是显示的波形幅度调整的不好，导致最终显示的波形丢失了过多的有用信息。</p>
+<h3 id="6-3-模拟器心率信号采集"><a href="#6-3-模拟器心率信号采集" class="headerlink" title="6.3 模拟器心率信号采集"></a>6.3 模拟器心率信号采集</h3><p>将模拟器调至2档（心率档），产生的心率信号默认为75BPM，此时时域与频域波形的显示效果如下：</p>
+<p><img src="/images/ecg/media/image60.jpeg" alt="图6.3：BPM为75的心率信号（模拟器产生）在LCD屏幕上的显示效果"></p>
+<p>可以看到，此时测得的心率基本准确，与心电模拟仪中给出的心率值误差不超过3 BPM，满足系统设计需求，且频谱图也有较明显的尖峰且噪声较少；此时滤波器的滤波效果虽然也有点过度了，但效果明显由于6.2节中对于心电信号的测量，有明显的波峰。</p>
+<p>心跳检测功能的设计不仅能够适应动态变化的心电信号，还通过灵活的阈值调整提高了对不同信号幅度的适应性。将模拟器调至8档，以调整产生心率信号的幅值（心率BPM仍为75），采集与显示效果如下：</p>
+<p><img src="/images/ecg/media/image61.jpeg" alt="图6.4：幅值为1mV的心率信号（模拟器产生）在LCD屏幕上的显示效果"></p>
+<p><img src="/images/ecg/media/image62.jpeg" alt="图6.5：幅值为2mV的心率信号（模拟器产生）在LCD屏幕上的显示效果"></p>
+<p><img src="/images/ecg/media/image63.jpeg" alt="图6.6：幅值为3mV的心率信号（模拟器产生）在LCD屏幕上的显示效果"></p>
+<p>可以看到，随着心率信号幅值的成倍变化，测量出的波形幅值也在成倍变化，且频谱较为干净，这说明该心电信号采集系统对于不同的信号幅度具有较高的灵敏性，但未对测量的幅值数值进行对应电压的换算导致结果并不直观；同时由于测量心率程序中对于检测跳变幅度的阈值设置较小，导致此时当幅值明显增大时，震荡信号的跳变幅度也随之增加，导致心率测量出现一定程度的偏差。</p>
+<h3 id="6-4-人体心电信号采集与测量"><a href="#6-4-人体心电信号采集与测量" class="headerlink" title="6.4 人体心电信号采集与测量"></a>6.4 人体心电信号采集与测量</h3><p>未接入人体心电信号时，采集到信号的时域波形与频谱如下：</p>
+<p><img src="/images/ecg/media/image64.jpeg" alt="图6.7：未接入任何心率信号时LCD屏幕上显示的时域与频域波形（白板）"></p>
+<p>对于人体心电信号检测，由于心电电极对接触状态的敏感性，最佳效果仅在涂抹酒精并佩戴三分钟内获得，因此系统仅能在心电电极贴附于人体的短时间内实现精确检测</p>
+<p>在实际测试时，邀请室友将电极片分别贴于手腕和脚部，并分别与数据线连接，此时系统采集到的心电波形如下所示（详细测试过程在演示视频中）：</p>
+<p><img src="/images/ecg/media/image65.jpeg" alt="图6.8：人体心电信号测试过程掠影"><br><img src="/images/ecg/media/image66.jpeg" alt="图6.8：人体心电信号测试过程掠影"></p>
+<p><img src="/images/ecg/media/image67.png" alt="图6.9：采集到的人体心电信号时域与频域波形显示结果"></p>
+<p>从图中可以看出，检测人体心电信号时，波形与心电信号模拟仪的输出相比仅存在轻微差别，整体表现良好，但仍然存在滤波过度的问题。</p>
+<p>除了将电极贴于手腕和脚部进行测试外，系统还测试了将电极贴在左右锁骨中线第一肋间和胸骨左缘第四肋间的位置。测试结果显示，这些位置的信号稳定性优于手脚部位，并且能够维持更长时间的良好效果。</p>
+<h2 id="7-实验结果总结和心得体会"><a href="#7-实验结果总结和心得体会" class="headerlink" title="7 实验结果总结和心得体会"></a>7 实验结果总结和心得体会</h2><h3 id="7-1-实验结果"><a href="#7-1-实验结果" class="headerlink" title="7.1 实验结果"></a>7.1 实验结果</h3><p>在本项目中，基于 STM32F407ZG 主控芯片和 ADS1292R 传感器模块，成功实现了人体心电信号的采集与分析功能。针对心电信号易受工频干扰和低频基线漂移影响的问题，设计并实现了 IIR 数字直流陷波器 和 FIR 数字低通滤波器，有效消除了干扰并获得了较为清晰的心电波形。</p>
+<p>在开发过程中，利用心电信号模拟仪对单片机程序进行了调试，使系统能够稳定采集和显示心电波形。尽管滤波器在MATLAB仿真中效果良好，但移植到单片机工程中后，出现了滤波过度的问题。初步分析认为，这可能与信号采样频率、显示波形的幅度比例调节以及滤波算法的具体实现有关，仍需进一步优化。然而，系统总体性能令人满意，其采集效果、频域分析结果、心电峰峰值及心率测算结果均较为准确。</p>
+<p>此外，系统还实现了对 ADS1292R模块自带测试方波信号的读取、显示以及峰峰值测量功能，基本满足了所有的设计需求。最终也成功采集并显示了实际人体心电信号的时域波形与频谱。</p>
+<h3 id="7-2-心得体会"><a href="#7-2-心得体会" class="headerlink" title="7.2 心得体会"></a>7.2 心得体会</h3><p>通过本次项目的实践，我对数字信号的采集与处理以及滤波器的设计与实现有了更加深刻的理解。这不仅加深了我对数字信号处理理论知识的掌握，还让我在理论与实践的结合中得以进一步巩固相关技能。在单片机的编程实践与调试过程中，我对STM32尤其是F4系列开发板的硬件和软件开发有了更深入的认识，这大大提升了我的开发效率和调试能力。</p>
+<p>本项目也是我首次尝试使用 FreeRTOS操作系统搭建整个工程框架。在此过程中，我学习并掌握了实时操作系统的基本原理和任务调度机制，初步理解了如何优化系统资源管理，成功地将操作系统的使用融入到嵌入式项目开发中。这一尝试不仅丰富了我的开发经验，也让我更好地认识到实时操作系统在复杂工程中的价值。</p>
+<p>尽管最终心电信号的显示结果并未完全达到预期，但我从问题中发现了自身在信号采集频率、滤波算法实现以及系统显示优化方面的不足，并明确了未来改进的方向。整个项目开发的过程充满了挑战，同时也伴随着大量的收获。我深刻体会到硬件开发与数字信号处理是一个不断探索和优化的过程，而这次项目实践无疑为我在这些领域的技能提升打下了坚实基础。</p>
+<p>此外，本次项目还培养了我独立分析和解决问题的能力。从模块功能的实现到整体工程的构建，我逐步熟悉了完整的开发流程，对系统的设计、调试和优化有了更加系统化的认识。我相信，这些经验和能力将在今后的学习和工作中发挥重要作用，为更高层次的开发任务奠定基础。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>[1] 朱冰莲,方敏编著.数字信号处理[M].电子工业出版社,2014:276.</p>
+<p>[2] 程佩青编著.数字信号处理教程[M].清华大学出版社,2015:524.</p>
+<p>[3] 任勇,曾浩编著.单片机原理及应用[M].清华大学出版社,2023.</p>
+<p>[4] 德州仪器. ADS1292 数据手册</p>
+<p>[5] 任勇. CQU_S12XDEV开发板原理图 微电子与通信工程学院</p>
+<p>[6] 任勇. ADS1292-心电信号采集原理图及接口说明-RY</p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>心电信号采集与处理</p><p><a href="http://asgard-tim.github.io/2024/12/31/ecg/">http://asgard-tim.github.io/2024/12/31/ecg/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>Tim</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2024-12-31</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2025-03-03</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/%E5%8D%95%E7%89%87%E6%9C%BA/">单片机</a><a class="link-muted mr-2" rel="tag" href="/tags/STM32/">STM32</a><a class="link-muted mr-2" rel="tag" href="/tags/%E4%BF%A1%E5%8F%B7%E4%B8%8E%E7%B3%BB%E7%BB%9F/">信号与系统</a><a class="link-muted mr-2" rel="tag" href="/tags/%E9%A2%91%E8%B0%B1%E5%88%86%E6%9E%90/">频谱分析</a><a class="link-muted mr-2" rel="tag" href="/tags/%E6%95%B0%E5%AD%97%E4%BF%A1%E5%8F%B7%E5%A4%84%E7%90%86/">数字信号处理</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%BF%83%E7%94%B5%E4%BF%A1%E5%8F%B7%E9%87%87%E9%9B%86/">心电信号采集</a><a class="link-muted mr-2" rel="tag" href="/tags/FreeRTOS/">FreeRTOS</a><a class="link-muted mr-2" rel="tag" href="/tags/ADS1292/">ADS1292</a><a class="link-muted mr-2" rel="tag" href="/tags/%E6%BB%A4%E6%B3%A2%E5%99%A8/">滤波器</a><a class="link-muted mr-2" rel="tag" href="/tags/FIR/">FIR</a><a class="link-muted mr-2" rel="tag" href="/tags/IIR/">IIR</a></div><!--!--></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/img/wechat.jpg" alt="支付宝"></span></a><a class="button donate" data-type="wechat"><span class="icon is-small"><i class="fab fa-weixin"></i></span><span>微信</span><span class="qrcode"><img src="/img/alipay.jpg" alt="微信"></span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2025/01/05/graph/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">基于自编码器和卷积网络的肺炎图像识别</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2024/12/22/control/"><span class="level-item">基于直流电源调控的自动调光控制设计</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div class="content" id="valine-thread"></div><script src="//cdn.jsdelivr.net/npm/leancloud-storage@3/dist/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine@1.4.16/dist/Valine.min.js"></script><script>new Valine({
+            el: '#valine-thread',
+            appId: "4YfCkg9RY2bBZosr2CIG3MbR-gzGzoHsz",
+            appKey: "yY6mlbvEevj97fBj9Ri4czpD",
+            placeholder: "请多指教",
+            avatar: "mm",
+            avatarForce: false,
+            meta: ["nick","mail","link"],
+            pageSize: 10,
+            lang: "zh-CN",
+            visitor: false,
+            highlight: true,
+            recordIP: false,
+            
+            
+            
+            enableQQ: false,
+            requiredFields: [],
+        });</script></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1 is-sticky"><div class="card widget" id="toc" data-type="toc"><div class="card-content"><div class="menu"><h3 class="menu-label">目录</h3><ul class="menu-list"><li><a class="level is-mobile" href="#1-实验需求分析"><span class="level-left"><span class="level-item">1</span><span class="level-item">1 实验需求分析</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#1-1-项目背景介绍"><span class="level-left"><span class="level-item">1.1</span><span class="level-item">1.1 项目背景介绍</span></span></a></li><li><a class="level is-mobile" href="#1-2-心电信号特征与设计需求"><span class="level-left"><span class="level-item">1.2</span><span class="level-item">1.2 心电信号特征与设计需求</span></span></a></li></ul></li><li><a class="level is-mobile" href="#2-实现方案论证"><span class="level-left"><span class="level-item">2</span><span class="level-item">2 实现方案论证</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#2-1-系统框架设计"><span class="level-left"><span class="level-item">2.1</span><span class="level-item">2.1 系统框架设计</span></span></a></li><li><a class="level is-mobile" href="#2-2-STM32主控芯片"><span class="level-left"><span class="level-item">2.2</span><span class="level-item">2.2 STM32主控芯片</span></span></a></li><li><a class="level is-mobile" href="#2-3-心电信号模拟器"><span class="level-left"><span class="level-item">2.3</span><span class="level-item">2.3 心电信号模拟器</span></span></a></li><li><a class="level is-mobile" href="#2-3-信号采集传感器：ADS1292R"><span class="level-left"><span class="level-item">2.4</span><span class="level-item">2.3 信号采集传感器：ADS1292R</span></span></a></li><li><a class="level is-mobile" href="#2-4-SPI通信读取采集数据"><span class="level-left"><span class="level-item">2.5</span><span class="level-item">2.4 SPI通信读取采集数据</span></span></a></li></ul></li><li><a class="level is-mobile" href="#3-理论推导与MATLAB计算"><span class="level-left"><span class="level-item">3</span><span class="level-item">3 理论推导与MATLAB计算</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#3-1-原始心电信号数据的读取与频谱分析"><span class="level-left"><span class="level-item">3.1</span><span class="level-item">3.1 原始心电信号数据的读取与频谱分析</span></span></a></li><li><a class="level is-mobile" href="#3-2-IIR数字直流陷波器设计与滤波效果"><span class="level-left"><span class="level-item">3.2</span><span class="level-item">3.2 IIR数字直流陷波器设计与滤波效果</span></span></a></li><li><a class="level is-mobile" href="#3-3-FIR数字低通滤波器设计与滤波效果"><span class="level-left"><span class="level-item">3.3</span><span class="level-item">3.3 FIR数字低通滤波器设计与滤波效果</span></span></a></li><li><a class="level is-mobile" href="#3-4-滤波结果综合分析"><span class="level-left"><span class="level-item">3.4</span><span class="level-item">3.4 滤波结果综合分析</span></span></a></li><li><a class="level is-mobile" href="#3-5-心率计算"><span class="level-left"><span class="level-item">3.5</span><span class="level-item">3.5 心率计算</span></span></a></li></ul></li><li><a class="level is-mobile" href="#4-STM32程序设计与参数选择"><span class="level-left"><span class="level-item">4</span><span class="level-item">4 STM32程序设计与参数选择</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#4-1-单片机程序架构设计"><span class="level-left"><span class="level-item">4.1</span><span class="level-item">4.1 单片机程序架构设计</span></span></a></li><li><a class="level is-mobile" href="#4-2-采集原始数据解码"><span class="level-left"><span class="level-item">4.2</span><span class="level-item">4.2 采集原始数据解码</span></span></a></li><li><a class="level is-mobile" href="#4-3-处理算法移植：滤波器"><span class="level-left"><span class="level-item">4.3</span><span class="level-item">4.3 处理算法移植：滤波器</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#4-3-1-IIR数字直流陷波器"><span class="level-left"><span class="level-item">4.3.1</span><span class="level-item">4.3.1 IIR数字直流陷波器</span></span></a></li><li><a class="level is-mobile" href="#4-3-2-FIR数字低通滤波器"><span class="level-left"><span class="level-item">4.3.2</span><span class="level-item">4.3.2 FIR数字低通滤波器</span></span></a></li></ul></li><li><a class="level is-mobile" href="#4-4-处理算法移植：心率与幅值计算"><span class="level-left"><span class="level-item">4.4</span><span class="level-item">4.4 处理算法移植：心率与幅值计算</span></span></a></li><li><a class="level is-mobile" href="#4-5-TFT屏幕绘制采集波形"><span class="level-left"><span class="level-item">4.5</span><span class="level-item">4.5 TFT屏幕绘制采集波形</span></span></a></li><li><a class="level is-mobile" href="#4-6-频谱分析及其TFT屏幕绘制"><span class="level-left"><span class="level-item">4.6</span><span class="level-item">4.6 频谱分析及其TFT屏幕绘制</span></span></a></li></ul></li><li><a class="level is-mobile" href="#5-程序测试方法"><span class="level-left"><span class="level-item">5</span><span class="level-item">5 程序测试方法</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#5-1-ADS1292R驱动移植及引脚配置"><span class="level-left"><span class="level-item">5.1</span><span class="level-item">5.1 ADS1292R驱动移植及引脚配置</span></span></a></li><li><a class="level is-mobile" href="#5-2-ADS1292R驱动移植验证：读取传感器设备ID"><span class="level-left"><span class="level-item">5.2</span><span class="level-item">5.2 ADS1292R驱动移植验证：读取传感器设备ID</span></span></a></li><li><a class="level is-mobile" href="#5-3-ADS1292R驱动移植验证：测试信号采集及其TFT屏幕绘制"><span class="level-left"><span class="level-item">5.3</span><span class="level-item">5.3 ADS1292R驱动移植验证：测试信号采集及其TFT屏幕绘制</span></span></a></li></ul></li><li><a class="level is-mobile" href="#6-实验数据记录与分析"><span class="level-left"><span class="level-item">6</span><span class="level-item">6 实验数据记录与分析</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#6-1-测试信号采集"><span class="level-left"><span class="level-item">6.1</span><span class="level-item">6.1 测试信号采集</span></span></a></li><li><a class="level is-mobile" href="#6-2-模拟器心电信号采集"><span class="level-left"><span class="level-item">6.2</span><span class="level-item">6.2 模拟器心电信号采集</span></span></a></li><li><a class="level is-mobile" href="#6-3-模拟器心率信号采集"><span class="level-left"><span class="level-item">6.3</span><span class="level-item">6.3 模拟器心率信号采集</span></span></a></li><li><a class="level is-mobile" href="#6-4-人体心电信号采集与测量"><span class="level-left"><span class="level-item">6.4</span><span class="level-item">6.4 人体心电信号采集与测量</span></span></a></li></ul></li><li><a class="level is-mobile" href="#7-实验结果总结和心得体会"><span class="level-left"><span class="level-item">7</span><span class="level-item">7 实验结果总结和心得体会</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#7-1-实验结果"><span class="level-left"><span class="level-item">7.1</span><span class="level-item">7.1 实验结果</span></span></a></li><li><a class="level is-mobile" href="#7-2-心得体会"><span class="level-left"><span class="level-item">7.2</span><span class="level-item">7.2 心得体会</span></span></a></li></ul></li><li><a class="level is-mobile" href="#参考资料"><span class="level-left"><span class="level-item">8</span><span class="level-item">参考资料</span></span></a></li></ul></div></div><style>#toc .menu-list > li > a.is-active + .menu-list { display: block; }#toc .menu-list > li > a + .menu-list { display: none; }</style><script src="/js/toc.js" defer></script></div><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar is-rounded" src="/img/head1.jpg" alt="Jinghua Xu"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">Jinghua Xu</p><p class="is-size-6 is-block">明月科创实验班人工智能专业 本科大三在读</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>重庆 重庆大学国家卓越工程师学院</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">26</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">19</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">75</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/Asgard-Tim" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Weibo" href="https://www.weibo.com/u/6315188431"><i class="fab fa-weibo"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Bilibili" href="https://space.bilibili.com/171895120"><i class="fab fa-bilibili"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Email" href="mailto:20224546@stu.cqu.edu.cn"><i class="fas fa-envelope"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Phone" href="tel:+86 19132050174"><i class="fas fa-phone"></i></a></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><figure class="media-left"><a class="image" href="/2025/02/22/index/"><img src="/images/avatar.jpg" alt="个人简历"></a></figure><div class="media-content"><p class="date"><time dateTime="2025-02-22T11:52:30.000Z">2025-02-22</time></p><p class="title"><a href="/2025/02/22/index/">个人简历</a></p><p class="categories"><a href="/categories/About-XJH/">About XJH</a> / <a href="/categories/About-XJH/%E6%98%8E%E8%AF%9A/">明诚</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/01/11/smoke/"><img src="/images/smoke/media/image55.png" alt="烟雾扩散问题"></a></figure><div class="media-content"><p class="date"><time dateTime="2025-01-11T12:58:03.000Z">2025-01-11</time></p><p class="title"><a href="/2025/01/11/smoke/">烟雾扩散问题</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86%E6%96%B9%E6%B3%95/">数学物理方法</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/01/05/graph/"><img src="/images/graph/media/image19.png" alt="基于自编码器和卷积网络的肺炎图像识别"></a></figure><div class="media-content"><p class="date"><time dateTime="2025-01-04T17:02:03.000Z">2025-01-05</time></p><p class="title"><a href="/2025/01/05/graph/">基于自编码器和卷积网络的肺炎图像识别</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%99%BA%E8%83%BD%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/">智能图像处理</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2024/12/31/ecg/"><img src="/images/ecg/media/image67.png" alt="心电信号采集与处理"></a></figure><div class="media-content"><p class="date"><time dateTime="2024-12-30T18:02:03.000Z">2024-12-31</time></p><p class="title"><a href="/2024/12/31/ecg/">心电信号采集与处理</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95II/">定量工程设计方法II</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2024/12/22/control/"><img src="/images/control/media/image135.png" alt="基于直流电源调控的自动调光控制设计"></a></figure><div class="media-content"><p class="date"><time dateTime="2024-12-21T18:15:03.000Z">2024-12-22</time></p><p class="title"><a href="/2024/12/22/control/">基于直流电源调控的自动调光控制设计</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%87%AA%E5%8A%A8%E6%8E%A7%E5%88%B6%E5%8E%9F%E7%90%86/">自动控制原理</a></p></div></article></div></div><div class="column-right-shadow is-hidden-widescreen"></div></div><div class="column column-right is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only order-3"><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/About-XJH/"><span class="level-start"><span class="level-item">About XJH</span></span><span class="level-end"><span class="level-item tag">2</span></span></a><ul><li><a class="level is-mobile" href="/categories/About-XJH/%E6%98%8E%E6%85%B5/"><span class="level-start"><span class="level-item">明慵</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/About-XJH/%E6%98%8E%E8%AF%9A/"><span class="level-start"><span class="level-item">明诚</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></li><li><a class="level is-mobile" href="/categories/%E4%B8%AA%E4%BA%BA%E9%A1%B9%E7%9B%AE/"><span class="level-start"><span class="level-item">个人项目</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8A%A8%E6%89%8B%E5%AD%A6%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">动手学深度学习</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/"><span class="level-start"><span class="level-item">课程项目</span></span><span class="level-end"><span class="level-item tag">21</span></span></a><ul><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E4%BA%A7%E5%93%81%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">产品设计</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95I/"><span class="level-start"><span class="level-item">定量工程设计方法I</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95II/"><span class="level-start"><span class="level-item">定量工程设计方法II</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E6%95%88%E5%AD%A6/"><span class="level-start"><span class="level-item">工效学</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">工程原理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">工程设计</span></span><span class="level-end"><span class="level-item tag">5</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86%E6%96%B9%E6%B3%95/"><span class="level-start"><span class="level-item">数学物理方法</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%99%BA%E8%83%BD%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/"><span class="level-start"><span class="level-item">智能图像处理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%9F%BA%E7%A1%80/"><span class="level-start"><span class="level-item">机器人基础</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%A6%82%E7%8E%87%E8%AE%BA%E4%B8%8E%E6%95%B0%E7%90%86%E7%BB%9F%E8%AE%A1/"><span class="level-start"><span class="level-item">概率论与数理统计</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E7%BA%BF%E6%80%A7%E4%BB%A3%E6%95%B0/"><span class="level-start"><span class="level-item">线性代数</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%87%AA%E5%8A%A8%E6%8E%A7%E5%88%B6%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">自动控制原理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">软件设计</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li></ul></li></ul></div></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2025/02/"><span class="level-start"><span class="level-item">二月 2025</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2025/01/"><span class="level-start"><span class="level-item">一月 2025</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/12/"><span class="level-start"><span class="level-item">十二月 2024</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/06/"><span class="level-start"><span class="level-item">六月 2024</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/02/"><span class="level-start"><span class="level-item">二月 2024</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/01/"><span class="level-start"><span class="level-item">一月 2024</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/12/"><span class="level-start"><span class="level-item">十二月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/11/"><span class="level-start"><span class="level-item">十一月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/10/"><span class="level-start"><span class="level-item">十月 2023</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/09/"><span class="level-start"><span class="level-item">九月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/07/"><span class="level-start"><span class="level-item">七月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/06/"><span class="level-start"><span class="level-item">六月 2023</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/05/"><span class="level-start"><span class="level-item">五月 2023</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/03/"><span class="level-start"><span class="level-item">三月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/02/"><span class="level-start"><span class="level-item">二月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/ADS1292/"><span class="tag">ADS1292</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Arduino/"><span class="tag">Arduino</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Buck%E5%8F%98%E6%8D%A2%E5%99%A8/"><span class="tag">Buck变换器</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/C/"><span class="tag">C++</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/C51/"><span class="tag">C51</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/COMSOL/"><span class="tag">COMSOL</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/ChatGPT/"><span class="tag">ChatGPT</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/FIR/"><span class="tag">FIR</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/FPGA/"><span class="tag">FPGA</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/FreeRTOS/"><span class="tag">FreeRTOS</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/IIR/"><span class="tag">IIR</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Logistic%E5%9B%9E%E5%BD%92/"><span class="tag">Logistic回归</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/MATLAB/"><span class="tag">MATLAB</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Matlab/"><span class="tag">Matlab</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/PID%E9%97%AD%E7%8E%AF%E6%8E%A7%E5%88%B6/"><span class="tag">PID闭环控制</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Python/"><span class="tag">Python</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/QQbot/"><span class="tag">QQbot</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/RANSAC/"><span class="tag">RANSAC</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/ROS/"><span class="tag">ROS</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/R%E8%AF%AD%E8%A8%80/"><span class="tag">R语言</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/STM32/"><span class="tag">STM32</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Shewhart%E6%8E%A7%E5%88%B6%E5%9B%BE/"><span class="tag">Shewhart控制图</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Ubuntu/"><span class="tag">Ubuntu</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Unity/"><span class="tag">Unity</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/XJH/"><span class="tag">XJH</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BA%8C%E5%88%86%E7%B1%BB/"><span class="tag">二分类</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BA%A7%E5%93%81%E8%B4%A8%E9%87%8F%E7%AE%A1%E7%90%86/"><span class="tag">产品质量管理</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BA%BA%E6%9C%BA%E4%BA%A4%E4%BA%92/"><span class="tag">人机交互</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BC%A0%E7%83%AD%E5%AD%A6/"><span class="tag">传热学</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BF%A1%E5%8F%B7%E4%B8%8E%E7%B3%BB%E7%BB%9F/"><span class="tag">信号与系统</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%81%87%E8%AE%BE%E6%A3%80%E9%AA%8C/"><span class="tag">假设检验</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2/"><span class="tag">傅里叶变换</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%85%89%E4%BC%8FMPPT/"><span class="tag">光伏MPPT</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8A%A8%E5%8A%9B%E5%AD%A6%E4%BB%BF%E7%9C%9F/"><span class="tag">动力学仿真</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8A%A8%E6%89%8B%E5%AD%A6%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="tag">动手学深度学习</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%95%E7%89%87%E6%9C%BA/"><span class="tag">单片机</span><span class="tag">5</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"><span class="tag">卷积神经网络</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/"><span class="tag">可视化</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%9B%BE%E5%83%8F%E8%AF%86%E5%88%AB/"><span class="tag">图像识别</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"><span class="tag">学习笔记</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%AE%9A%E9%87%8F%E5%88%86%E6%9E%90/"><span class="tag">定量分析</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B0%8F%E8%BD%A6/"><span class="tag">小车</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B7%A5%E7%A8%8B%E7%83%AD%E5%8A%9B%E5%AD%A6/"><span class="tag">工程热力学</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BF%83%E7%94%B5%E4%BF%A1%E5%8F%B7%E9%87%87%E9%9B%86/"><span class="tag">心电信号采集</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BF%AB%E9%80%9F%E6%88%AA%E6%96%ADHuber%E6%8D%9F%E5%A4%B1/"><span class="tag">快速截断Huber损失</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%89%A9%E6%95%A3%E6%96%B9%E7%A8%8B/"><span class="tag">扩散方程</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/"><span class="tag">支持向量机</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%91%E7%81%BE%E6%9C%BA%E5%99%A8%E4%BA%BA/"><span class="tag">救灾机器人</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E5%AD%97%E4%BF%A1%E5%8F%B7%E5%A4%84%E7%90%86/"><span class="tag">数字信号处理</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E5%88%86%E6%9E%90/"><span class="tag">数据处理分析</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%96%AF%E7%89%B9%E6%9E%97%E5%8F%91%E5%8A%A8%E6%9C%BA/"><span class="tag">斯特林发动机</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%96%AF%E7%89%B9%E6%9E%97%E5%BE%AA%E7%8E%AF/"><span class="tag">斯特林循环</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%89%E9%99%90%E5%85%83%E4%BB%BF%E7%9C%9F/"><span class="tag">有限元仿真</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%AC%E5%BE%81%E5%80%BC%E6%B1%82%E8%A7%A3/"><span class="tag">本征值求解</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"><span class="tag">机器学习</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%BA%E6%A2%B0%E8%87%82/"><span class="tag">机械臂</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%BA%E6%A2%B0%E8%AE%BE%E8%AE%A1/"><span class="tag">机械设计</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9F%94%E6%80%A7%E5%A5%97%E7%B4%A2%E6%83%A9%E7%BD%9A/"><span class="tag">柔性套索惩罚</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%BB%A4%E6%B3%A2%E5%99%A8/"><span class="tag">滤波器</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%83%9F%E9%9B%BE%E6%89%A9%E6%95%A3/"><span class="tag">烟雾扩散</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%94%B5%E6%9C%BA%E6%8E%A7%E5%88%B6/"><span class="tag">电机控制</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BA%BF%E6%80%A7%E4%BB%A3%E6%95%B0/"><span class="tag">线性代数</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BB%9F%E8%AE%A1%E8%BF%87%E7%A8%8B%E6%8E%A7%E5%88%B6/"><span class="tag">统计过程控制</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E5%8A%A8%E6%8E%A7%E5%88%B6%E5%8E%9F%E7%90%86/"><span class="tag">自动控制原理</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E5%8A%A8%E8%B0%83%E5%85%89/"><span class="tag">自动调光</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E7%BC%96%E7%A0%81%E5%99%A8/"><span class="tag">自编码器</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%88%B9/"><span class="tag">船</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89/"><span class="tag">计算机视觉</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%AE%BE%E8%AE%A1%E6%80%9D%E7%BB%B4/"><span class="tag">设计思维</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%B7%9D%E7%A6%BB%E7%89%B9%E6%80%A7/"><span class="tag">距离特性</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%B7%AF%E5%BE%84%E8%A7%84%E5%88%92/"><span class="tag">路径规划</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%97%AD%E7%8E%AF%E6%8E%A7%E5%88%B6/"><span class="tag">闭环控制</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%A2%91%E8%B0%B1%E5%88%86%E6%9E%90/"><span class="tag">频谱分析</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%AB%98%E6%96%AF%E6%A0%B8%E5%87%BD%E6%95%B0/"><span class="tag">高斯核函数</span><span class="tag">1</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/title1.png" alt="Homepage of Jinghua Xu" height="28"></a><p class="is-size-7"><span>&copy; 2025 Tim</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p><p class="is-size-7">© Copyright by Jinghua Xu</p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css"><script src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/contrib/auto-render.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/contrib/mhchem.min.js" defer></script><script>window.addEventListener("load", function() {
+            document.querySelectorAll('[role="article"] > .content').forEach(function(element) {
+                renderMathInElement(element);
+            });
+        });</script><script type="text/x-mathjax-config">MathJax.Hub.Config({
+            'HTML-CSS': {
+                matchFontHeight: false
+            },
+            SVG: {
+                matchFontHeight: false
+            },
+            CommonHTML: {
+                matchFontHeight: false
+            },
+            tex2jax: {
+                inlineMath: [
+                    ['$','$'],
+                    ['\\(','\\)']
+                ]
+            }
+        });</script><script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/chitose.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body></html>
+        <link rel="stylesheet" href="https://cdn1.tianli0.top/gh/zhheo/Post-Abstract-AI@0.15.2/tianli_gpt.css">
+        <script>
+        let tianliGPT_postSelector = 'article.article .content';
+        let tianliGPT_key = '0c7949b4d4956ca16024';
+        </script>
+        <script src="https://cdn1.tianli0.top/gh/zhheo/Post-Abstract-AI@0.15.2/tianli_gpt.min.js"></script>
