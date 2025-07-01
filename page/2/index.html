@@ -28,198 +28,725 @@
       switchTab();
       window.addEventListener('hashchange', switchTab, false);
   })();
-  </script><!-- hexo injector head_end end --></head><body class="is-3-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/title1.png" alt="Homepage of Jinghua Xu" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">主页</a><a class="navbar-item" href="/archives">时间轴</a><a class="navbar-item" href="/categories">分类</a><a class="navbar-item" href="/tags">标签</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="GitHub" href="https://github.com">GitHub</a><a class="navbar-item" target="_blank" rel="noopener" title="Contect me on GitHub" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-6-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time datetime="2025-04-22T18:07:03.000Z" title="2025/4/23 02:07:03">2025-04-23</time>发表</span><span class="level-item"><time datetime="2025-04-29T15:58:08.821Z" title="2025/4/29 23:58:08">2025-04-29</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a><span>&nbsp;/&nbsp;</span><a class="link-muted" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E6%95%B0%E5%80%BC%E5%88%86%E6%9E%90/">工程数值分析</a></span><span class="level-item">1 小时读完 (大约8883个字)</span></div></div><p class="title is-3 is-size-4-mobile"><a class="link-muted" href="/2025/04/23/project02/">图像插值算法及其优化</a></p><div class="content"><div id="postchat_postcontent"><h2 id="研究背景及其意义"><a href="#研究背景及其意义" class="headerlink" title="研究背景及其意义"></a>研究背景及其意义</h2><p>图像<strong>放大</strong>与<strong>旋转</strong>是数字图像处理中最基础的几何变换操作，其核心在于如何通过插值算法重建原始图像中不存在的像素信息。当对图像进行放大操作时，输出图像的像素网格会超出原始图像的采样范围，需要通过插值来填补这些新增像素点的颜色值；而在旋转操作中，即使保持图像尺寸不变，原始像素的整数坐标经过旋转变换后也会落在新图像的非整数位置，同样需要通过插值来重新确定每个输出像素的颜色值。</p>
-<p>图像插值是利用原图像中的颜色值通过一定的方法计算出待插入像素点的颜色值的过程。对图像进行插值一般有两个步骤：首先定义一个图像插值公式，然后利用该插值公式计算待插入点的颜色值。常见的图像插值算法有双线性法、最近邻法、非均匀法、双三次卷积插值法、双立方法、Lagrange法、 样条插值法、 克里金（Krijing） 插值法等。这些插值方法通常定义一个插值数据点的隐式函数，再提取该函数的等值面作为图像插值方法，常用的插值核包括线性插值核、样条插值核等。</p>
-<ul>
-<li><strong>最近邻插值</strong>作为最简单的算法，直接将距离待插值点最近的已知像素值作为结果，虽然计算效率极高（时间复杂度O(1)），但会产生明显的块状伪影（“马赛克”）和锯齿形边缘；</li>
-<li><strong>双线性插值</strong>通过考虑2×2邻域内四个像素的加权平均，在计算成本（O(n)）和视觉效果之间取得平衡，但仍会导致高频信息丢失和边缘模糊；</li>
-<li>更高阶的<strong>双三次插值</strong>（使用4×4邻域）和样条插值虽然能提供更平滑的结果，但计算复杂度显著增加（O(n²)），且可能引入不必要的振铃效应。</li>
-</ul>
-<p>现有算法的根本<strong>局限</strong>在于<strong>采用统一的插值核函数处理整幅图像，忽视了图像不同区域的特征差异</strong>。例如，在平坦区域使用复杂插值会造成计算资源浪费，而在纹理丰富区域使用简单插值又会导致细节损失。基于此，我们希望通过改良的<strong>四平面插值</strong>算法对图像的放大与旋转效果进行优化，<strong>根据图像局部特征自适应地选择不同的插值策略</strong>，以规避用同一个插值公式对所有像素进行插值存在的不足。</p>
-<h2 id="常用图像插值算法"><a href="#常用图像插值算法" class="headerlink" title="常用图像插值算法"></a>常用图像插值算法</h2><p>课本在6.5节中提到，在插值节点数量较多时，为避免Runge振荡现象的发生，并不提倡用高次多项式进行插值，而宁可用低次多项式作分段插值。在图像处理这一特定的应用场景中，需要处理的图像尺寸规模往往较大，且同一行（列）的所有像素颜色值显然并不具有可以用一个多项式函数显式表达的规律，但相邻的像素点颜色值之间又存在一定的关联性，因此分段插值仅考虑局部特征的特性在这里能够良好地契合所需性能。根据对于待插入像素点周围已有的像素点信息的利用情况，这里列举了几种常见的图像插值算法：</p>
-<ul>
-<li>最近邻法：仅利用待插值像素点转换至原图像坐标后距离其最近的一个像素点的颜色值，将其直接作为待插值像素点的颜色值</li>
-<li>双线性法：利用待插值像素点转换至原图像坐标后距离其最近的四个像素点的颜色值，加权平均后作为待插值像素点的颜色值</li>
-<li>双立方法：利用待插值像素点转换至原图像坐标后距离其最近的十六个像素点的颜色值，加权平均后作为待插值像素点的颜色值</li>
-</ul>
-<h3 id="最近邻法"><a href="#最近邻法" class="headerlink" title="最近邻法"></a>最近邻法</h3><p><img src="/images/project2/3.png" alt="一维最近邻插值示意图"></p>
-<p>如上图所示，在一维最近邻插值中，坐标轴上各点 xi-1，xi，xi+1 … 两两对半等分间隔 (红色虚线划分)，从而非边界的各坐标点都有一个等宽的邻域，并根据每个坐标点的值构成一个类似分段函数的函数约束，从而使各插值坐标点的值等同于所在邻域原坐标点的值。例如，插值点 x 坐落于 坐标点 xi 的邻域，那么其值 f(x) 就等于 f(xi)。</p>
-<p>在二维的图像插值场景中，可以对上述一维最近邻插值进行推广，如下图所示：</p>
-<p><img src="/images/project2/4.png" alt="二维最近邻插值示意图"></p>
-<p>可以看到，(x0, y0)、(x0, y1)、(x1, y0)、(x1, y1) 都是原图像上的坐标点，颜色值分别对应为 Q11、Q12、Q21、Q22。而颜色值未知的插值点 (x, y)（需转换至原图像坐标），根据最近邻插值方法的约束，其与坐标点 (x0, y0) 位置最接近 (即位于  (x0, y0) 的邻域内)，故插值点 (x, y) 的颜色值 P = Q11。</p>
-<p>总而言之，最近邻法的基本思想即：<strong>将待插入点的坐标进行四舍五入，再以该行列坐标都是整数点的颜色值（灰度值）替代待插入点(x, y)处的颜色值。</strong>事实上，这也正是机器学习中KNN（K-Nearest Neighbor）算法在K=1时的情形。</p>
-<p>基于以上算法思想，编写python函数代码实现图像放缩与旋转过程中的最近邻法插值：</p>
-<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 最近邻法插值实现图像放缩</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">nearest_neighbor_interpolation</span>(<span class="params">image, scale_factor</span>):</span><br><span class="line">    h, w, channel = image.shape</span><br><span class="line">    new_h, new_w = <span class="built_in">int</span>(h * scale_factor), <span class="built_in">int</span>(w * scale_factor)</span><br><span class="line">    resized_image = np.zeros((new_h, new_w, <span class="built_in">int</span>(channel)), dtype=image.dtype)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(new_h):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(new_w):</span><br><span class="line">            src_i = <span class="built_in">int</span>(<span class="built_in">round</span>((i + <span class="number">1</span>) / scale_factor, <span class="number">0</span>))</span><br><span class="line">            src_j = <span class="built_in">int</span>(<span class="built_in">round</span>((j + <span class="number">1</span>) / scale_factor, <span class="number">0</span>))</span><br><span class="line">            resized_image[i, j] = image[src_i - <span class="number">1</span>, src_j - <span class="number">1</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> resized_image</span><br><span class="line"></span><br><span class="line"><span class="comment"># 最近邻法插值实现图像旋转</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">nearest_neighbor_rotation</span>(<span class="params">image, angle</span>):</span><br><span class="line">    h, w, channel = image.shape</span><br><span class="line">    angle_rad = math.radians(angle)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 计算旋转后的图像尺寸</span></span><br><span class="line">    cos_theta = <span class="built_in">abs</span>(math.cos(angle_rad))</span><br><span class="line">    sin_theta = <span class="built_in">abs</span>(math.sin(angle_rad))</span><br><span class="line">    new_w = <span class="built_in">int</span>(h * sin_theta + w * cos_theta)</span><br><span class="line">    new_h = <span class="built_in">int</span>(h * cos_theta + w * sin_theta)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 旋转中心</span></span><br><span class="line">    cx, cy = w / <span class="number">2</span>, h / <span class="number">2</span></span><br><span class="line">    new_cx, new_cy = new_w / <span class="number">2</span>, new_h / <span class="number">2</span></span><br><span class="line">    </span><br><span class="line">    rotated_image = np.zeros((new_h, new_w, channel), dtype=image.dtype)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(new_h):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(new_w):</span><br><span class="line">            <span class="comment"># 将新图像坐标转换回原图像坐标</span></span><br><span class="line">            x = (j - new_cx) * math.cos(angle_rad) + (i - new_cy) * math.sin(angle_rad) + cx</span><br><span class="line">            y = -(j - new_cx) * math.sin(angle_rad) + (i - new_cy) * math.cos(angle_rad) + cy</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 最近邻插值</span></span><br><span class="line">            <span class="keyword">if</span> <span class="number">0</span> &lt;= x &lt; w <span class="keyword">and</span> <span class="number">0</span> &lt;= y &lt; h:</span><br><span class="line">                src_x = <span class="built_in">int</span>(<span class="built_in">round</span>(x))</span><br><span class="line">                src_y = <span class="built_in">int</span>(<span class="built_in">round</span>(y))</span><br><span class="line">                rotated_image[i, j] = image[src_y - <span class="number">1</span>, src_x - <span class="number">1</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> rotated_image</span><br></pre></td></tr></tbody></table></figure>
-
-<h3 id="双线性法"><a href="#双线性法" class="headerlink" title="双线性法"></a>双线性法</h3><p><img src="/images/project2/5.png" alt="一维线性插值示意图"></p>
-<p>如上图所示，在一维的线性插值中，坐标轴上各点 xi-1，xi，xi+1 … 的值“两两直接相连”为线段，从而构成了一条连续的约束函数。而插值坐标点例如 x，根据约束函数其值应为 f(x)。因为每两个坐标点之间的约束函数曲线是一次线性的线段，对插值结果而言是“线性” 的，所以该方法称为线性插值。基于线性函数的特性，可以便捷地求取原图像上的两个像素点间任一待插值点的颜色值：</p>
-<p><img src="/images/project2/6.png" alt="一维线性插值计算示意图"></p>
-<p>可以看到，图中 x0 和 x1 都是原有的坐标点，颜色值分别对应为 y0 和 y1，此时根据线性插值法约束，在 (x0, y0) 和 (x1, y1) 构成的一次函数上，颜色值未知的插值点 x的颜色值 y 即为：<br>$$<br>y=y_0+(x-x_0)\frac{y_1-y_0}{x_1-x_0}=y_0+\frac{(x-x_0)y_1-(x-x_0)y_0}{x_1-x_0}<br>$$<br>实际上，即便 x 不在 x0 与 x1 之间，该公式也成立（此时为线性外插），但图像处理中不需涉及此情形。 </p>
-<p>从一维的线性插值出发，很容易拓展到二维图像的双线性插值，通过三次一阶线性插值（本质为加权求和）获得最终结果，下图便展示了该过程的定性斜视与定量俯视示意图：</p>
-<p><img src="/images/project2/7.png" alt="二维线性插值定性斜视示意图"></p>
-<p><img src="/images/project2/8.png" alt="二维线性插值定量俯视示意图"></p>
-<p>其中，(x0, y0)、(x0, y1)、(x1, y0)、(x1, y1) 均为原图像上的像素坐标点，颜色值分别对应为 f(x0, y0)、f(x0, y1)、f(x1, y0)、f(x1, y1)。而颜色值未知的插值点 (x, y)，根据双线性插值法的约束，可以先由像素坐标点 (x0, y0) 和 (x0, y1) 在 y 轴向作一维线性插值得到 f(x0, y)、由像素坐标点 (x1, y0) 和 (x1, y1) 在 y 轴向作一维线性插值得到 f(x1, y)，然后再由 (x0, y) 和 (x1, y) 在 x 轴向作一维线性插值得到插值点 (x, y) 的灰度值 f(x, y)。</p>
-<p>事实上，一维线性插值先作 x 轴向再作 y 轴向，得到的结果完全相同，仅为顺序先后的区别。这里不妨先由像素坐标点 (x0, y0) 和 (x1, y0) 在 x 轴向作一维线性插值得到 f(x, y0)、由像素坐标点 (x0, y1) 和 (x1, y1) 在 x 轴向作一维线性插值得到 f(x, y1)：<br>$$<br>f(x,y_0)=\frac{x_1-x}{x_1-x_0}f(x_0,y_0)+\frac{x-x_0}{x_1-x_0}f(x_1,y_0)<br>$$</p>
-<p>$$<br>f(x,y_1)=\frac{x_1-x}{x_1-x_0}f(x_0,y_1)+\frac{x-x_0}{x_1-x_0}f(x_1,y_1)<br>$$</p>
-<p>然后再由 (x, y0) 和 (x, y1) 在 y 轴向作一维线性插值得到插值点 (x, y) 的灰度值 f(x, y)：<br>$$<br>f(x,y)=\frac{y_1-y}{y_1-y_0}f(x,y_0)+\frac{y-y_0}{y_1-y_0}f(x,y_1)<br>$$<br>合并上述式子，得到最终的双线性插值结果：<br>$$<br>f(x,y)=\frac{(y_1-y)(x_1-x)}{(y_1-y_0)(x_1-x_0)}f(x_0,y_0)+\frac{(y_1-y)(x-x_0)}{(y_1-y_0)(x_1-x_0)}f(x_1,y_0)+\frac{(y-y_0)(x_1-x)}{(y_1-y_0)(x_1-x_0)}f(x_0,y_1)+\frac{(y-y_0)(x-x_0)}{(y_1-y_0)(x_1-x_0)}<br>$$<br>值得注意的是，在实际的图像插值处理过程中，为尽量保证插值效果的准确性，往往仅采用距离待插值点（转换至原图像坐标）最近的四个点，即:（[]符号表示待插值点转换至原图像坐标后向下取整）<br>$$<br>x_0=[x]，y_0=[y]<br>$$</p>
-<p>$$<br>x_1=x_0+1，y_1=y_0+1<br>$$</p>
-<p>从加权求和的角度理解，可以进一步地将双线性插值结果改写为如下形式：<br>$$<br>p=x-[x], q=y-[y]<br>$$</p>
-<p>$$<br>\begin{array}{rcl}f(x,y)=(1-q){(1-p)f([x][y])+pf([x]+1,[y])}+q{(1-p)f([x],[y]+1)+pf([x]+1,[y]+1)}\end{array}<br>$$</p>
-<p><img src="/images/project2/9.png" alt="二维线性插值加权求和角度示意图"></p>
-<p>基于以上算法思想，编写python函数代码实现图像放缩与旋转过程中的双线性法插值：</p>
-<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 双线性法插值实现图像放缩</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bilinear_interpolation</span>(<span class="params">image, scale_factor</span>):</span><br><span class="line">    h, w, channel = image.shape</span><br><span class="line">    new_h, new_w = <span class="built_in">int</span>(h * scale_factor), <span class="built_in">int</span>(w * scale_factor)</span><br><span class="line">    resized_image = np.zeros((new_h, new_w, <span class="built_in">int</span>(channel)), dtype=image.dtype)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(new_h):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(new_w):</span><br><span class="line">            x = (j + <span class="number">1</span>) / scale_factor</span><br><span class="line">            y = (i + <span class="number">1</span>) / scale_factor</span><br><span class="line">            x1 = <span class="built_in">int</span>(x)</span><br><span class="line">            y1 = <span class="built_in">int</span>(y)</span><br><span class="line">            x2 = x1 + <span class="number">1</span></span><br><span class="line">            y2 = y1 + <span class="number">1</span></span><br><span class="line">            p = x - x1</span><br><span class="line">            q = y - y1</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 边界问题处理</span></span><br><span class="line">            <span class="keyword">if</span> x2 == w + <span class="number">1</span>:</span><br><span class="line">                x2 = x1</span><br><span class="line">            <span class="keyword">if</span> y2 == h + <span class="number">1</span>:</span><br><span class="line">                y2 = y1</span><br><span class="line">                </span><br><span class="line">            resized_image[i ,j] = (<span class="number">1</span> - q) * ((<span class="number">1</span> - p) * image[y1 - <span class="number">1</span>, x1 - <span class="number">1</span>] + p * image[y1 - <span class="number">1</span>, x2 - <span class="number">1</span>]) + q * ((<span class="number">1</span> - p) * image[y2 - <span class="number">1</span>, x1 - <span class="number">1</span>] + p * image[y2 - <span class="number">1</span>, x2 - <span class="number">1</span>])</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> resized_image</span><br><span class="line"></span><br><span class="line"><span class="comment"># 双线性法插值实现图像旋转</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bilinear_rotation</span>(<span class="params">image, angle</span>):</span><br><span class="line">    h, w, channel = image.shape</span><br><span class="line">    angle_rad = math.radians(angle)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 计算旋转后的图像尺寸</span></span><br><span class="line">    cos_theta = <span class="built_in">abs</span>(math.cos(angle_rad))</span><br><span class="line">    sin_theta = <span class="built_in">abs</span>(math.sin(angle_rad))</span><br><span class="line">    new_w = <span class="built_in">int</span>(h * sin_theta + w * cos_theta)</span><br><span class="line">    new_h = <span class="built_in">int</span>(h * cos_theta + w * sin_theta)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 旋转中心</span></span><br><span class="line">    cx, cy = w / <span class="number">2</span>, h / <span class="number">2</span></span><br><span class="line">    new_cx, new_cy = new_w / <span class="number">2</span>, new_h / <span class="number">2</span></span><br><span class="line">    </span><br><span class="line">    rotated_image = np.zeros((new_h, new_w, channel), dtype=image.dtype)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(new_h):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(new_w):</span><br><span class="line">            <span class="comment"># 将新图像坐标转换回原图像坐标</span></span><br><span class="line">            x = (j - new_cx) * math.cos(angle_rad) + (i - new_cy) * math.sin(angle_rad) + cx</span><br><span class="line">            y = -(j - new_cx) * math.sin(angle_rad) + (i - new_cy) * math.cos(angle_rad) + cy</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 双线性插值</span></span><br><span class="line">            <span class="keyword">if</span> <span class="number">0</span> &lt;= x &lt; w-<span class="number">1</span> <span class="keyword">and</span> <span class="number">0</span> &lt;= y &lt; h-<span class="number">1</span>:</span><br><span class="line">                x1, y1 = <span class="built_in">int</span>(x), <span class="built_in">int</span>(y)</span><br><span class="line">                x2, y2 = <span class="built_in">min</span>(x1 + <span class="number">1</span>, w - <span class="number">1</span>), <span class="built_in">min</span>(y1 + <span class="number">1</span>, h - <span class="number">1</span>)</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 计算权重</span></span><br><span class="line">                a = x - x1</span><br><span class="line">                b = y - y1</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 边界处理</span></span><br><span class="line">                <span class="keyword">if</span> x2 &gt;= w:</span><br><span class="line">                    x2 = x1</span><br><span class="line">                <span class="keyword">if</span> y2 &gt;= h:</span><br><span class="line">                    y2 = y1</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 插值计算</span></span><br><span class="line">                rotated_image[i, j] = (<span class="number">1</span> - a) * (<span class="number">1</span> - b) * image[y1, x1] + \</span><br><span class="line">                                     a * (<span class="number">1</span> - b) * image[y1, x2] + \</span><br><span class="line">                                     (<span class="number">1</span> - a) * b * image[y2, x1] + \</span><br><span class="line">                                     a * b * image[y2, x2]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> rotated_image    </span><br></pre></td></tr></tbody></table></figure>
-
-<h3 id="双立方法"><a href="#双立方法" class="headerlink" title="双立方法"></a>双立方法</h3><p>双立方法插值又称立方卷积插值/双三次插值，这也是数值分析中最常用的二维插值方法。在这种方法中，插值点 (x, y) 的像素颜色值 f(x, y) 通过矩形网格中最近的十六个采样点的加权平均得到，而各采样点的权重由该点到待求插值点的距离确定，此距离包括水平和竖直两个方向上的距离。相比之下，双线性插值仅由周围的四个采样点加权得到。</p>
-<p><img src="/images/project2/10.png" alt="双立方法插值示意图"></p>
-<p>如上图所示，设（转换至原图像中）待求插值点坐标为 (i+u, j+v)【i、j为整数部分，u、v为小数部分】，已知其周围的 16 个像素坐标点 (网格) 的颜色值，还需要计算 16 个点各自的权重。以像素坐标点 (i, j) 为例，因为该点在 y 轴和 x 轴方向上与待求插值点 (i+u, j+v) 的距离分别为 u 和 v，所以其权重为 w(u) × w(v)，其中 w(·) 是插值权重核 (可以理解为定义的权重函数)。同理可得其余 15 个像素坐标点各自的权重。那么，待求插值点 (i+u, j+v) 的颜色值 f(i+u, j+v) 将通过如下计算得到：<br>$$<br>f(i+u,j+v)=A\times B\times C<br>$$<br>其中各项由向量或矩阵表示为：<br>$$<br>\mathrm{A}=[w(1+u)w(u)w(1-u)w(2-u)]<br>$$</p>
-<p>$$<br>\mathrm{B}=\begin{bmatrix}f(i-1,j-1)&amp;f(i-1,j+0)&amp;f(i-1,j+1)&amp;f(i-1,j+2)\f(i+0,j-1)&amp;f(i+0,j+0)&amp;f(i+0,j+1)&amp;f(i+0,j+2)\f(i+1,j-1)&amp;f(i+1,j+0)&amp;f(i+1,j+1)&amp;f(i+1,j+2)\f(i+2,j-1)&amp;f(i+2,j+0)&amp;f(i+2,j+1)&amp;f(i+2,j+2)\end{bmatrix}<br>$$</p>
-<p>$$<br>\mathbb{C}=[w(1+v)w(v)w(1-v)w(2-v)]^T<br>$$</p>
-<p>插值权重核 w(·) 为：<br>$$<br>w(x)=\begin{cases}1-2|x|^2+|x|^3&amp;,|x|&lt;1\4-8|x|+5|x|^2-|x|^3&amp;,1\leq|x|&lt;2\0&amp;,|x|\geq2&amp;\end{cases}<br>$$<br>插值权重核 w(·) 的函数图像：</p>
-<p><img src="/images/project2/11.png" alt="双立方法插值权重核函数图像"></p>
-<p>为方便后续算法实现，将以上加权求和过程各步骤展开，合并后化简得到待插入点的颜色值计算公式：<br>$$<br>f(i+u,j+v)=\sum_{m=0}^{3}\sum_{n=0}^{3}a_{mn}u^{m}v^{n}<br>$$<br>其中多项式的系数a_{mn}计算公式如下：(式中p <em>{qr}与上述矩阵B中元素一一对应，如p <em>00=f(i-1,j-1))<br>$$<br>\begin{aligned}<br>&amp;a</em>{00}=p</em>{11}\&amp;a_{01}=-\frac{1}{2}p_{10}+\frac{1}{2}p_{12}\&amp;a_{02}=p_{10}-\frac{5}{2}p_{11}+2p_{12}-\frac{1}{2}p_{13}\&amp;a_{03}=-\frac{1}{2}p_{10}+\frac{3}{2}p_{11}-\frac{3}{2}p_{12}+\frac{1}{2}p_{13}\&amp;a_{10}=-\frac{1}{2}p_{01}+\frac{1}{2}p_{21}\&amp;a_{11}=\frac{1}{4}p_{00}-\frac{1}{4}p_{02}-\frac{1}{4}p_{20}+\frac{1}{4}p_{22}\&amp;a_{12}=-\frac{1}{2}p_{00}+\frac{1}{4}p_{01}-p_{02}+\frac{1}{4}p_{03}+\frac{1}{2}p_{20}-\frac{5}{4}p_{21}+p_{22}-\frac{1}{4}p_{23}\&amp;a_{13}=\frac{1}{4}p_{00}-\frac{3}{4}p_{01}+\frac{3}{4}p_{02}-\frac{1}{4}p_{03}-\frac{1}{4}p_{20}+\frac{3}{4}p_{21}-\frac{3}{4}p_{22}+\frac{1}{4}p_{23}\<br>&amp;a_{20}=p_{01}-\frac{5}{2}p_{11}+2p_{21}-\frac{1}{2}p_{31}\<br>&amp;a_{21}=-\frac{1}{2}p_{00}+\frac{1}{2}p_{02}+\frac{5}{4}p_{10}-\frac{5}{4}p_{12}-p_{20}+p_{22}+\frac{1}{4}p_{30}-\frac{1}{4}p_{32}\&amp;a_{22}=p_{00}-\frac{5}{2}p_{01}+2p_{02}-\frac{1}{2}p_{03}-\frac{5}{2}p_{10}+\frac{25}{4}p_{11}-5p_{12}+\frac{5}{4}p_{13}+2p_{20}-5p_{21}+4p_{22}-p_{23}-\frac{1}{2}p_{30}+\frac{5}{4}p_{31}-p_{32}+\frac{1}{4}p_{33}\<br>&amp;a_{23}=-\frac{1}{2}p_{00}+\frac{3}{2}p_{01}-\frac{3}{2}p_{02}+\frac{1}{2}p_{03}+\frac{5}{4}p_{10}-\frac{15}{4}p_{11}+\frac{15}{4}p_{12}-\frac{5}{4}p_{13}-p_{20}+3p_{21}-3p_{22}+p_{23}+\frac{1}{4}p_{30}-\frac{3}{4}p_{31}+\frac{3}{4}p_{32}-\frac{1}{4}p_{33}\<br>&amp;a_{30}=-\frac{1}{2}p_{01}+\frac{3}{2}p_{11}-\frac{3}{2}p_{21}+\frac{1}{2}p_{31}\<br>&amp;a_{31}=\frac{1}{4}p_{00}-\frac{1}{4}p_{02}-\frac{3}{4}p_{10}+\frac{3}{4}p_{12}+\frac{3}{4}p_{20}-\frac{3}{4}p_{22}-\frac{1}{4}p_{30}+\frac{1}{4}p_{32}\&amp;a_{32}=-\frac{1}{2}p_{00}+\frac{5}{4}p_{01}-p_{02}+\frac{1}{4}p_{03}+\frac{3}{2}p_{10}-\frac{15}{4}p_{11}+3p_{12}-\frac{3}{4}p_{13}-\frac{3}{2}p_{20}+\frac{15}{4}p_{21}-3p_{22}+\frac{3}{4}p_{23}+\frac{1}{2}p_{30}-\frac{5}{4}p_{31}+p_{32}-\frac{1}{4}p_{33}\&amp;a_{33}=\frac{1}{4}p_{00}-\frac{3}{4}p_{01}+\frac{3}{4}p_{02}-\frac{1}{4}p_{03}-\frac{3}{4}p_{10}+\frac{9}{4}p_{11}-\frac{9}{4}p_{12}+\frac{3}{4}p_{13}+\frac{3}{4}p_{20}-\frac{9}{4}p_{21}+\frac{9}{4}p_{22}-\frac{3}{4}p_{23}-\frac{1}{4}p_{30}+\frac{3}{4}p_{31}-\frac{3}{4}p_{32}+\frac{1}{4}p_{33}<br>\end{aligned}<br>$$<br>基于以上算法思想，编写python函数代码实现图像放缩与旋转过程中的双立方法插值：</p>
-<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 双立方法插值实现图像放缩</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bicubic_interpolation</span>(<span class="params">image, scale_factor</span>):</span><br><span class="line">    h, w, channel = image.shape</span><br><span class="line">    new_h, new_w = <span class="built_in">int</span>(h * scale_factor), <span class="built_in">int</span>(w * scale_factor)</span><br><span class="line">    resized_image = np.zeros((new_h, new_w, channel))</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(new_h):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(new_w):</span><br><span class="line">            x = i / scale_factor</span><br><span class="line">            y = j / scale_factor</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 确定16个邻域像素的坐标</span></span><br><span class="line">            x0 = <span class="built_in">max</span>(<span class="number">0</span>, <span class="built_in">int</span>(np.floor(x)) - <span class="number">1</span>)</span><br><span class="line">            x1 = x0 + <span class="number">1</span></span><br><span class="line">            x2 = x0 + <span class="number">2</span></span><br><span class="line">            x3 = <span class="built_in">min</span>(w-<span class="number">1</span>, x0 + <span class="number">3</span>)</span><br><span class="line">            </span><br><span class="line">            y0 = <span class="built_in">max</span>(<span class="number">0</span>, <span class="built_in">int</span>(np.floor(y)) - <span class="number">1</span>)</span><br><span class="line">            y1 = y0 + <span class="number">1</span></span><br><span class="line">            y2 = y0 + <span class="number">2</span></span><br><span class="line">            y3 = <span class="built_in">min</span>(h-<span class="number">1</span>, y0 + <span class="number">3</span>)</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 获取16个邻域像素的值</span></span><br><span class="line">            p = np.zeros((<span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>))</span><br><span class="line">            <span class="keyword">for</span> m <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):</span><br><span class="line">                <span class="keyword">for</span> n <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):</span><br><span class="line">                    xi = x0 + n</span><br><span class="line">                    yi = y0 + m</span><br><span class="line">                    xi = <span class="built_in">min</span>(<span class="built_in">max</span>(xi, <span class="number">0</span>), w-<span class="number">1</span>)  <span class="comment"># 边界处理</span></span><br><span class="line">                    yi = <span class="built_in">min</span>(<span class="built_in">max</span>(yi, <span class="number">0</span>), h-<span class="number">1</span>)</span><br><span class="line">                    p[m, n] = image[yi, xi]</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 计算相对位置</span></span><br><span class="line">            dx = x - x1</span><br><span class="line">            dy = y - y1</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 系数</span></span><br><span class="line">            a = np.zeros((<span class="number">4</span>, <span class="number">4</span>, channel))</span><br><span class="line">            a[<span class="number">0</span>, <span class="number">0</span>] = p[<span class="number">1</span>, <span class="number">1</span>]</span><br><span class="line">            a[<span class="number">0</span>, <span class="number">1</span>] = -<span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">2</span>]</span><br><span class="line">            a[<span class="number">0</span>, <span class="number">2</span>] = p[<span class="number">1</span>, <span class="number">0</span>] - <span class="number">2.5</span>*p[<span class="number">1</span>, <span class="number">1</span>] + <span class="number">2</span>*p[<span class="number">1</span>, <span class="number">2</span>] - <span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">3</span>]</span><br><span class="line">            a[<span class="number">0</span>, <span class="number">3</span>] = -<span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">1.5</span>*p[<span class="number">1</span>, <span class="number">1</span>] - <span class="number">1.5</span>*p[<span class="number">1</span>, <span class="number">2</span>] + <span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">3</span>]</span><br><span class="line">            </span><br><span class="line">            a[<span class="number">1</span>, <span class="number">0</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">0.5</span>*p[<span class="number">2</span>, <span class="number">1</span>]</span><br><span class="line">            a[<span class="number">1</span>, <span class="number">1</span>] = <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">0</span>] + <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">2</span>]</span><br><span class="line">            a[<span class="number">1</span>, <span class="number">2</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">0</span>] + <span class="number">1.25</span>*p[<span class="number">0</span>, <span class="number">1</span>] - p[<span class="number">0</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">3</span>] + <span class="number">0.5</span>*p[<span class="number">2</span>, <span class="number">0</span>] - <span class="number">1.25</span>*p[<span class="number">2</span>, <span class="number">1</span>] + p[<span class="number">2</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line">            a[<span class="number">1</span>, <span class="number">3</span>] = <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">0.75</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">0.75</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">3</span>] - <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">0</span>] + <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">1</span>] - <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line">            </span><br><span class="line">            a[<span class="number">2</span>, <span class="number">0</span>] = p[<span class="number">0</span>, <span class="number">1</span>] - <span class="number">2.5</span>*p[<span class="number">1</span>, <span class="number">1</span>] + <span class="number">2</span>*p[<span class="number">2</span>, <span class="number">1</span>] - <span class="number">0.5</span>*p[<span class="number">3</span>, <span class="number">1</span>]</span><br><span class="line">            a[<span class="number">2</span>, <span class="number">1</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">0</span>] + <span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">2</span>] + <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">0</span>] - <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">2</span>] - p[<span class="number">2</span>, <span class="number">0</span>] + p[<span class="number">2</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">0</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">2</span>]</span><br><span class="line">            a[<span class="number">2</span>, <span class="number">2</span>] = p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">2.5</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">2</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">3</span>] - <span class="number">2.5</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">6.25</span>*p[<span class="number">1</span>, <span class="number">1</span>] - <span class="number">5</span>*p[<span class="number">1</span>, <span class="number">2</span>] + <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">3</span>] + <span class="number">2</span>*p[<span class="number">2</span>, <span class="number">0</span>] - <span class="number">5</span>*p[<span class="number">2</span>, <span class="number">1</span>] + <span class="number">4</span>*p[<span class="number">2</span>, <span class="number">2</span>] - p[<span class="number">2</span>, <span class="number">3</span>] - <span class="number">0.5</span>*p[<span class="number">3</span>, <span class="number">0</span>] + <span class="number">1.25</span>*p[<span class="number">3</span>, <span class="number">1</span>] - p[<span class="number">3</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">3</span>]</span><br><span class="line">            a[<span class="number">2</span>, <span class="number">3</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">0</span>] + <span class="number">1.5</span>*p[<span class="number">0</span>, <span class="number">1</span>] - <span class="number">1.5</span>*p[<span class="number">0</span>, <span class="number">2</span>] + <span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">3</span>] + <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">0</span>] - <span class="number">3.75</span>*p[<span class="number">1</span>, <span class="number">1</span>] + <span class="number">3.75</span>*p[<span class="number">1</span>, <span class="number">2</span>] - <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">3</span>] - p[<span class="number">2</span>, <span class="number">0</span>] + <span class="number">3</span>*p[<span class="number">2</span>, <span class="number">1</span>] - <span class="number">3</span>*p[<span class="number">2</span>, <span class="number">2</span>] + p[<span class="number">2</span>, <span class="number">3</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">0</span>] - <span class="number">0.75</span>*p[<span class="number">3</span>, <span class="number">1</span>] + <span class="number">0.75</span>*p[<span class="number">3</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">3</span>]</span><br><span class="line">            </span><br><span class="line">            a[<span class="number">3</span>, <span class="number">0</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">1.5</span>*p[<span class="number">1</span>, <span class="number">1</span>] - <span class="number">1.5</span>*p[<span class="number">2</span>, <span class="number">1</span>] + <span class="number">0.5</span>*p[<span class="number">3</span>, <span class="number">1</span>]</span><br><span class="line">            a[<span class="number">3</span>, <span class="number">1</span>] = <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">2</span>] + <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">0</span>] - <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">0</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">2</span>]</span><br><span class="line">            a[<span class="number">3</span>, <span class="number">2</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">0</span>] + <span class="number">1.25</span>*p[<span class="number">0</span>, <span class="number">1</span>] - p[<span class="number">0</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">3</span>] + <span class="number">1.5</span>*p[<span class="number">1</span>, <span class="number">0</span>] - <span class="number">3.75</span>*p[<span class="number">1</span>, <span class="number">1</span>] + <span class="number">3</span>*p[<span class="number">1</span>, <span class="number">2</span>] - <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">3</span>] - <span class="number">1.5</span>*p[<span class="number">2</span>, <span class="number">0</span>] + <span class="number">3.75</span>*p[<span class="number">2</span>, <span class="number">1</span>] - <span class="number">3</span>*p[<span class="number">2</span>, <span class="number">2</span>] + <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">3</span>] + <span class="number">0.5</span>*p[<span class="number">3</span>, <span class="number">0</span>] - <span class="number">1.25</span>*p[<span class="number">3</span>, <span class="number">1</span>] + p[<span class="number">3</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">3</span>]</span><br><span class="line">            a[<span class="number">3</span>, <span class="number">3</span>] = <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">0.75</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">0.75</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">3</span>] - <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">2.25</span>*p[<span class="number">1</span>, <span class="number">1</span>] - <span class="number">2.25</span>*p[<span class="number">1</span>, <span class="number">2</span>] + <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">3</span>] + <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">0</span>] - <span class="number">2.25</span>*p[<span class="number">2</span>, <span class="number">1</span>] + <span class="number">2.25</span>*p[<span class="number">2</span>, <span class="number">2</span>] - <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">3</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">0</span>] + <span class="number">0.75</span>*p[<span class="number">3</span>, <span class="number">1</span>] - <span class="number">0.75</span>*p[<span class="number">3</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">3</span>]</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 计算插值结果</span></span><br><span class="line">            value = np.zeros(channel)</span><br><span class="line">            <span class="keyword">for</span> m <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):</span><br><span class="line">                <span class="keyword">for</span> n <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):</span><br><span class="line">                    value += a[m, n] * (dx**n) * (dy**m)</span><br><span class="line">            </span><br><span class="line">            resized_image[i, j] = np.clip(value, <span class="number">0</span>, <span class="number">255</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> resized_image.astype(np.uint8)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 双立方法插值实现图像旋转</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bicubic_rotation</span>(<span class="params">image, angle</span>):</span><br><span class="line">    h, w, channel = image.shape</span><br><span class="line">    angle_rad = math.radians(angle)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 计算旋转后的图像尺寸</span></span><br><span class="line">    cos_theta = <span class="built_in">abs</span>(math.cos(angle_rad))</span><br><span class="line">    sin_theta = <span class="built_in">abs</span>(math.sin(angle_rad))</span><br><span class="line">    new_w = <span class="built_in">int</span>(h * sin_theta + w * cos_theta)</span><br><span class="line">    new_h = <span class="built_in">int</span>(h * cos_theta + w * sin_theta)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 旋转中心</span></span><br><span class="line">    cx, cy = w / <span class="number">2</span>, h / <span class="number">2</span></span><br><span class="line">    new_cx, new_cy = new_w / <span class="number">2</span>, new_h / <span class="number">2</span></span><br><span class="line">    </span><br><span class="line">    rotated_image = np.zeros((new_h, new_w, channel))</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(new_h):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(new_w):</span><br><span class="line">            <span class="comment"># 将新图像坐标转换回原图像坐标</span></span><br><span class="line">            x = (j - new_cx) * math.cos(angle_rad) + (i - new_cy) * math.sin(angle_rad) + cx</span><br><span class="line">            y = -(j - new_cx) * math.sin(angle_rad) + (i - new_cy) * math.cos(angle_rad) + cy</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> <span class="number">0</span> &lt;= x &lt; w <span class="keyword">and</span> <span class="number">0</span> &lt;= y &lt; h:</span><br><span class="line">                <span class="comment"># 确定16个邻域像素的坐标</span></span><br><span class="line">                x0 = <span class="built_in">max</span>(<span class="number">0</span>, <span class="built_in">int</span>(np.floor(x)) - <span class="number">1</span>)</span><br><span class="line">                x1 = x0 + <span class="number">1</span></span><br><span class="line">                x2 = x0 + <span class="number">2</span></span><br><span class="line">                x3 = <span class="built_in">min</span>(w-<span class="number">1</span>, x0 + <span class="number">3</span>)</span><br><span class="line">                </span><br><span class="line">                y0 = <span class="built_in">max</span>(<span class="number">0</span>, <span class="built_in">int</span>(np.floor(y)) - <span class="number">1</span>)</span><br><span class="line">                y1 = y0 + <span class="number">1</span></span><br><span class="line">                y2 = y0 + <span class="number">2</span></span><br><span class="line">                y3 = <span class="built_in">min</span>(h-<span class="number">1</span>, y0 + <span class="number">3</span>)</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 获取16个邻域像素的值</span></span><br><span class="line">                p = np.zeros((<span class="number">4</span>, <span class="number">4</span>, channel))</span><br><span class="line">                <span class="keyword">for</span> m <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):</span><br><span class="line">                    <span class="keyword">for</span> n <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):</span><br><span class="line">                        xi = x0 + n</span><br><span class="line">                        yi = y0 + m</span><br><span class="line">                        xi = <span class="built_in">min</span>(<span class="built_in">max</span>(xi, <span class="number">0</span>), w-<span class="number">1</span>)  <span class="comment"># 边界处理</span></span><br><span class="line">                        yi = <span class="built_in">min</span>(<span class="built_in">max</span>(yi, <span class="number">0</span>), h-<span class="number">1</span>)</span><br><span class="line">                        p[m, n] = image[yi, xi]</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 计算相对位置</span></span><br><span class="line">                dx = x - x1</span><br><span class="line">                dy = y - y1</span><br><span class="line"></span><br><span class="line">                <span class="comment"># 系数</span></span><br><span class="line">                a = np.zeros((<span class="number">4</span>, <span class="number">4</span>, channel))</span><br><span class="line">                a[<span class="number">0</span>, <span class="number">0</span>] = p[<span class="number">1</span>, <span class="number">1</span>]</span><br><span class="line">                a[<span class="number">0</span>, <span class="number">1</span>] = -<span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">2</span>]</span><br><span class="line">                a[<span class="number">0</span>, <span class="number">2</span>] = p[<span class="number">1</span>, <span class="number">0</span>] - <span class="number">2.5</span>*p[<span class="number">1</span>, <span class="number">1</span>] + <span class="number">2</span>*p[<span class="number">1</span>, <span class="number">2</span>] - <span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">3</span>]</span><br><span class="line">                a[<span class="number">0</span>, <span class="number">3</span>] = -<span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">1.5</span>*p[<span class="number">1</span>, <span class="number">1</span>] - <span class="number">1.5</span>*p[<span class="number">1</span>, <span class="number">2</span>] + <span class="number">0.5</span>*p[<span class="number">1</span>, <span class="number">3</span>]</span><br><span class="line">                </span><br><span class="line">                a[<span class="number">1</span>, <span class="number">0</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">0.5</span>*p[<span class="number">2</span>, <span class="number">1</span>]</span><br><span class="line">                a[<span class="number">1</span>, <span class="number">1</span>] = <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">0</span>] + <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">2</span>]</span><br><span class="line">                a[<span class="number">1</span>, <span class="number">2</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">0</span>] + <span class="number">1.25</span>*p[<span class="number">0</span>, <span class="number">1</span>] - p[<span class="number">0</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">3</span>] + <span class="number">0.5</span>*p[<span class="number">2</span>, <span class="number">0</span>] - <span class="number">1.25</span>*p[<span class="number">2</span>, <span class="number">1</span>] + p[<span class="number">2</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line">                a[<span class="number">1</span>, <span class="number">3</span>] = <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">0.75</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">0.75</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">3</span>] - <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">0</span>] + <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">1</span>] - <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line">                </span><br><span class="line">                a[<span class="number">2</span>, <span class="number">0</span>] = p[<span class="number">0</span>, <span class="number">1</span>] - <span class="number">2.5</span>*p[<span class="number">1</span>, <span class="number">1</span>] + <span class="number">2</span>*p[<span class="number">2</span>, <span class="number">1</span>] - <span class="number">0.5</span>*p[<span class="number">3</span>, <span class="number">1</span>]</span><br><span class="line">                a[<span class="number">2</span>, <span class="number">1</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">0</span>] + <span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">2</span>] + <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">0</span>] - <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">2</span>] - p[<span class="number">2</span>, <span class="number">0</span>] + p[<span class="number">2</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">0</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">2</span>]</span><br><span class="line">                a[<span class="number">2</span>, <span class="number">2</span>] = p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">2.5</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">2</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">3</span>] - <span class="number">2.5</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">6.25</span>*p[<span class="number">1</span>, <span class="number">1</span>] - <span class="number">5</span>*p[<span class="number">1</span>, <span class="number">2</span>] + <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">3</span>] + <span class="number">2</span>*p[<span class="number">2</span>, <span class="number">0</span>] - <span class="number">5</span>*p[<span class="number">2</span>, <span class="number">1</span>] + <span class="number">4</span>*p[<span class="number">2</span>, <span class="number">2</span>] - p[<span class="number">2</span>, <span class="number">3</span>] - <span class="number">0.5</span>*p[<span class="number">3</span>, <span class="number">0</span>] + <span class="number">1.25</span>*p[<span class="number">3</span>, <span class="number">1</span>] - p[<span class="number">3</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">3</span>]</span><br><span class="line">                a[<span class="number">2</span>, <span class="number">3</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">0</span>] + <span class="number">1.5</span>*p[<span class="number">0</span>, <span class="number">1</span>] - <span class="number">1.5</span>*p[<span class="number">0</span>, <span class="number">2</span>] + <span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">3</span>] + <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">0</span>] - <span class="number">3.75</span>*p[<span class="number">1</span>, <span class="number">1</span>] + <span class="number">3.75</span>*p[<span class="number">1</span>, <span class="number">2</span>] - <span class="number">1.25</span>*p[<span class="number">1</span>, <span class="number">3</span>] - p[<span class="number">2</span>, <span class="number">0</span>] + <span class="number">3</span>*p[<span class="number">2</span>, <span class="number">1</span>] - <span class="number">3</span>*p[<span class="number">2</span>, <span class="number">2</span>] + p[<span class="number">2</span>, <span class="number">3</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">0</span>] - <span class="number">0.75</span>*p[<span class="number">3</span>, <span class="number">1</span>] + <span class="number">0.75</span>*p[<span class="number">3</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">3</span>]</span><br><span class="line">                </span><br><span class="line">                a[<span class="number">3</span>, <span class="number">0</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">1.5</span>*p[<span class="number">1</span>, <span class="number">1</span>] - <span class="number">1.5</span>*p[<span class="number">2</span>, <span class="number">1</span>] + <span class="number">0.5</span>*p[<span class="number">3</span>, <span class="number">1</span>]</span><br><span class="line">                a[<span class="number">3</span>, <span class="number">1</span>] = <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">2</span>] + <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">0</span>] - <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">0</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">2</span>]</span><br><span class="line">                a[<span class="number">3</span>, <span class="number">2</span>] = -<span class="number">0.5</span>*p[<span class="number">0</span>, <span class="number">0</span>] + <span class="number">1.25</span>*p[<span class="number">0</span>, <span class="number">1</span>] - p[<span class="number">0</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">3</span>] + <span class="number">1.5</span>*p[<span class="number">1</span>, <span class="number">0</span>] - <span class="number">3.75</span>*p[<span class="number">1</span>, <span class="number">1</span>] + <span class="number">3</span>*p[<span class="number">1</span>, <span class="number">2</span>] - <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">3</span>] - <span class="number">1.5</span>*p[<span class="number">2</span>, <span class="number">0</span>] + <span class="number">3.75</span>*p[<span class="number">2</span>, <span class="number">1</span>] - <span class="number">3</span>*p[<span class="number">2</span>, <span class="number">2</span>] + <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">3</span>] + <span class="number">0.5</span>*p[<span class="number">3</span>, <span class="number">0</span>] - <span class="number">1.25</span>*p[<span class="number">3</span>, <span class="number">1</span>] + p[<span class="number">3</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">3</span>]</span><br><span class="line">                a[<span class="number">3</span>, <span class="number">3</span>] = <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">0</span>] - <span class="number">0.75</span>*p[<span class="number">0</span>, <span class="number">1</span>] + <span class="number">0.75</span>*p[<span class="number">0</span>, <span class="number">2</span>] - <span class="number">0.25</span>*p[<span class="number">0</span>, <span class="number">3</span>] - <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">0</span>] + <span class="number">2.25</span>*p[<span class="number">1</span>, <span class="number">1</span>] - <span class="number">2.25</span>*p[<span class="number">1</span>, <span class="number">2</span>] + <span class="number">0.75</span>*p[<span class="number">1</span>, <span class="number">3</span>] + <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">0</span>] - <span class="number">2.25</span>*p[<span class="number">2</span>, <span class="number">1</span>] + <span class="number">2.25</span>*p[<span class="number">2</span>, <span class="number">2</span>] - <span class="number">0.75</span>*p[<span class="number">2</span>, <span class="number">3</span>] - <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">0</span>] + <span class="number">0.75</span>*p[<span class="number">3</span>, <span class="number">1</span>] - <span class="number">0.75</span>*p[<span class="number">3</span>, <span class="number">2</span>] + <span class="number">0.25</span>*p[<span class="number">3</span>, <span class="number">3</span>]</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 计算插值结果</span></span><br><span class="line">                value = np.zeros(channel)</span><br><span class="line">                <span class="keyword">for</span> m <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):</span><br><span class="line">                    <span class="keyword">for</span> n <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):</span><br><span class="line">                        value += a[m, n] * (dx**n) * (dy**m)</span><br><span class="line">                </span><br><span class="line">                rotated_image[i, j] = np.clip(value, <span class="number">0</span>, <span class="number">255</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> rotated_image.astype(np.uint8)</span><br></pre></td></tr></tbody></table></figure>
-
-<h2 id="图像插值算法优化：基于四平面"><a href="#图像插值算法优化：基于四平面" class="headerlink" title="图像插值算法优化：基于四平面"></a>图像插值算法优化：基于四平面</h2><p>在上述的多种基于分段插值的图像插值算法中，均采用f(i, j)来表示图像的像素点坐标处的颜色值，其中ｉ表示行坐标，ｊ表示列坐标。为进一步地体现图像的局部特征差异并将其用于插值过程，我们引入“平面”的概念，并对图像数据进行升维处理，用三维空间点(i, j, f(i, j))来表示一个像素，并将其对应至空间坐标系中的一个点(x, y, z)。</p>
-<p>对一个待插入点而言，可以通过坐标平移将其周围4 个像素点转换为：（注意：此处z0<del>z3为像素坐标点s0</del>s3的颜色值，下同）<br>$$<br>s_0(0,0,z_0),s_1(0,1,z_1),s_2(1,0,z_2),s_3(1,1,z_3)<br>$$<br>从上述４个点的坐标可以看出它们任意３个点一定不在同一条直线上， 不在同一直线上的３个点可以确定一个平面， 下面讨论具体的插值方法：</p>
+  </script><!-- hexo injector head_end end --></head><body class="is-3-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/title1.png" alt="Homepage of Jinghua Xu" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">主页</a><a class="navbar-item" href="/archives">时间轴</a><a class="navbar-item" href="/categories">分类</a><a class="navbar-item" href="/tags">标签</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="GitHub" href="https://github.com">GitHub</a><a class="navbar-item" target="_blank" rel="noopener" title="Contect me on GitHub" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-6-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time datetime="2025-06-29T08:40:43.000Z" title="2025/6/29 16:40:43">2025-06-29</time>发表</span><span class="level-item"><time datetime="2025-07-01T15:48:49.710Z" title="2025/7/1 23:48:49">2025-07-01</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a><span>&nbsp;/&nbsp;</span><a class="link-muted" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E4%BA%A7%E5%93%81%E5%88%B6%E9%80%A0/">产品制造</a></span><span class="level-item">2 小时读完 (大约15815个字)</span></div></div><p class="title is-3 is-size-4-mobile"><a class="link-muted" href="/2025/06/29/manufac/">小提琴自动演奏机器人中的齿轮系统设计与制造</a></p><div class="content"><div id="postchat_postcontent"><h2 id="小提琴自动演奏机器人中的齿轮系统设计与制造"><a href="#小提琴自动演奏机器人中的齿轮系统设计与制造" class="headerlink" title="小提琴自动演奏机器人中的齿轮系统设计与制造"></a>小提琴自动演奏机器人中的齿轮系统设计与制造</h2><h3 id="项目简介"><a href="#项目简介" class="headerlink" title="项目简介"></a>项目简介</h3><p>小提琴作为一种历史悠久、表现力丰富的乐器，其演奏通常需要高度的技巧和长时间的训练。然而，自19世纪末以来，随着机械和电子技术的发展，人们开始尝试开发能够自动演奏小提琴的装置，旨在模拟甚至超越人类的演奏能力。这些自动演奏小提琴的出现，不仅是工程技术上的突破，也反映了人类对音乐自动化和完美演奏的持续追求。</p>
+<p>小提琴自动演奏机器人是一个集精密机械、电子、控制和人工智能技术于一体的复杂系统，旨在模拟人类小提琴演奏家的精湛技艺，实现音乐的自动化演奏。该项目的核心在于通过精确控制弓弦摩擦、指板按压和琴身姿态，准确再现音高、音色、节奏和情感表达，将小提琴演奏的复杂动作分解为可编程的机械运动。在整个系统中，齿轮传动系统作为核心传动部件，其设计与制造的精度、稳定性与可靠性直接影响着机器人的演奏性能和音质。</p>
+<p>本报告将深入探讨小提琴自动演奏机器人中齿轮系统的设计、材料选择、制造工艺以及相关的仿真与校核，旨在分析小提琴演奏对齿轮系统的特殊要求（如高精度定位、低噪音运行、快速响应），对比不同加工工艺的优缺点，从而得出最适合自动演奏机器人的齿轮制造解决方案。通过对齿轮传动系统的详细分析，旨在为提升小提琴自动演奏机器人的整体性能提供理论依据和实践指导。</p>
+<p><img src="/media/821dc87db0f47b2a2345b15bf99e359f.png" alt="不同方案两个版本的样机模型"></p>
+<h2 id="项目背景及意义"><a href="#项目背景及意义" class="headerlink" title="项目背景及意义"></a>项目背景及意义</h2><h3 id="项目进展"><a href="#项目进展" class="headerlink" title="项目进展"></a>项目进展</h3><p>我们是如何过渡到这个项目的。</p>
+<p>在上个学期，团队深入研究了小提琴教育行业，分析了小提琴产业链各环节的市场状况与主要问题，归纳出三个核心问题：第一，音乐教育市场缺乏创新——与十年前相比，教学模式和方法基本未变，但学习成本却增长了十倍；第二，小提琴制造业虽表面标准化，实则是非标准化生产，从生产到销售缺乏有效的管理和标准化指标，导致消费者需要付出极高成本才能购得理想的琴；第三，也是最核心的问题，音乐消费的价值观正在变化，音乐就像绘画一样，最开始在墙上画，后来在布料上面、在教堂的玻璃上面，材料和载体一直都在变化，而如今，越来越少的人会单纯为音乐消费，但同时，随着流媒体的传播和基础音乐教育的普及，音乐正逐渐成为生活场景中一个必不可少的元素。</p>
+<p><img src="/media/ad3c4c40c9a2f749278edd35a95430d4.jpg" alt="小提琴行业整体理解"></p>
+<p>上个学期在技术层面，我们从第一性原理出发，研究了小提琴的基础发声原理，并开发了基于共振原理的”小提琴音响”样机，通过利用小提琴的琴腔，能够让使用者直观感受到，音乐是由小提琴琴腔发出来的。以及不同材质对音乐风格的独特影响。这种效果与传统扬声器（Speaker）有着本质区别，每种材质的小提琴都能形成独特的”音乐滤镜”。</p>
+<p>基于这项技术原理，我们展开产品的设计，基于学琴者家庭日常练琴的“反馈”缺失的痛点，设计了一款能够实施反馈的“智能练琴搭档”。</p>
+<p><img src="/media/c694e2b61747dd6cf4a431c5e88663ef.jpg" alt="第一代样机开发"></p>
+<p>在寒假期间，一次偶然的发现，我们关注庞大的“闲置乐器”市场。2000 年至 2020年，是国内音乐教育的高速增长期，乐器，承载着千千万万家庭的音乐梦想走入千家万户，堪称一场现代”文艺复兴”。作为这场教育浪潮的亲身参与者，我们观察到年轻的乐器学习者随着年龄增长和学习压力加大，往往会逐渐搁置乐器。这个被忽视的闲置现象涉及庞大的市场规模和用户群体，恰恰为我们提供了机遇，本学期的多个项目都以此为出发点。</p>
+<p><img src="/media/9ef7b4836c227d70708a029a2cde4e73.png" alt="闲置琴分析：价值&amp;问题"></p>
+<h3 id="当前的核心方向"><a href="#当前的核心方向" class="headerlink" title="当前的核心方向"></a>当前的核心方向</h3><p>当前我们的工作聚焦于以下三个核心方向：</p>
 <ol>
-<li><p>先求出这４个点可能的４个平面方程</p>
-<p>已知空间平面的一般方程为：<br>$$<br>Ax+By+Cz+D=0<br>$$<br>将s0、s1、s2分别带入上式可得：<br>$$<br>\begin{cases}Cz_0+D=0\B+Cz_1+D=0\A+Cz_2+D=0&amp;\end{cases}<br>$$<br>则有：<br>$$<br>D=-Cz_0,B=C(z_0-z_1),A=C(z_0-z_2)<br>$$<br>再将其带回空间平面方程，整理后用f(x, y)代替z得到插值公式：<br>$$<br>f(x,y)=(z_{2}-z_{0})x+(z_{1}-z_{2})y+z_{0}<br>$$<br>同理，将s0、s1、s3带入空间平面方程可得插值公式：<br>$$<br>f(x,y)=(z_{3}-z_{1})x+(z_{1}-z_{0})y+z_{0}<br>$$<br>将s0、s2、s3带入空间平面方程可得插值公式：<br>$$<br>f(x,y)=(z_{2}-z_{0})x+(z_{3}-z_{2})y+z_{0}<br>$$<br>将s1、s2、s3带入空间平面方程可得插值公式：<br>$$<br>f(x,y)=(z_{3}-z_{1})x+(z_{3}-z_{2})y+(z_{2}+z_{1}-z_{3})<br>$$</p>
+<li><p>更好地帮助人们学琴 —— 提高学习效率，降低学习成本；</p>
 </li>
-<li><p>如果s0、s1、s2、s3这４ 个点在同一平面上， 则使用上述任意一个插值公式进行插值均可。 【平面法】</p>
-<blockquote>
-<p>判断这４个点是否在同一平面上， 只需要比较z1+z2 与 z0+z3是否相等：</p>
-<p>线段s0s3中点坐标为<br>$$<br>(\frac12,\frac12,\frac{z_0+z_3}2)<br>$$<br>线段s1s2中点坐标为<br>$$<br>(\frac12,\frac12,\frac{z_1+z_2}2)<br>$$<br>如果它们的中点坐标相同，则说明两条线段相交，相交的两条直线可以决定一个平面，即如果待插人点周围的四个点满足：<br>$$<br>z_1+z_2=z_0+z_3<br>$$<br>则这它们就是同一平面上的 4 个点，否则就不是同一平面上的 4 个点。</p>
-</blockquote>
+<li><p>打造更优质的小提琴及配件 —— 提升产品体验与性能；</p>
 </li>
-<li><p>从４个可能的平面中选择一个平面进行插值【四平面法】</p>
-<p>如果它们不是同一平面上的４个点， 情况比较复杂， 需认真讨论，s0、s1、s2、s3４个点的位置关系如下图所示：</p>
-<p><img src="/images/project2/12.png" alt="四点不在同一平面"></p>
-<p>在插值的过程中如果一半的区域选择由s0、s1、s2 所确定的平面进行插值， 则另一半必须选择由s1、s2、s3所确定的平面进行插值， 以保证对角线的每一边都是在同一个平面上， 避免出现 “锯齿形” 边缘，为了便于描述， 称s0、s1、s2所确定的平面为 “左下平面”，s1、s2、s3 所确定的平面为 “右上平面”，s0、s1、s3 所确定的平面 “左上平面”，s0、s2、s3所确定的平面 “右下平面”。 为此， 需要参考周围其他点的情况以决定选择哪个平面进行插值。 具体情况如下图所示（黑点是待插入点周围的４个点，白点是参考点）：</p>
-<p><img src="/images/project2/13.png" alt="待插入点周围的像素点"></p>
-<ol>
-<li>对于“左下平面”， 只能参考s0、s1、s2三点左面和下面的点， 即s0、s1、s2三点与s4、s5、s6、s8四个点中的任意一点在同一平面上即可。 </li>
-<li>对于“右上平面”，只能参考s1、s2、s3三点右面和上面的点， 即s1、s2、s3三点与s7、s9、s10、s11四个点中的任意一点在同一平面上即可。</li>
-<li>对于 “左上平面”，只能参考s0、s1、s3三点左面和上面的点， 即s0、s1、s3三点与s6、s8、s10、s11四个点中的任意一点在同一平面上即可。 </li>
-<li>对于 “右下平面”，只能参考s0、s2、s3三点右面和下面的点， 即s0、s2、s3三点与s4、s5、s7、s9四 个点中的任意一点在同一平面上即可。</li>
-</ol>
-<p>针对1、2两种情况， 当y = 1 + x时，用 “左下平面” 进行插值， 否则用 “右上平面” 进行插值；针对3、4两种情况， 当y = x ^ 3时，用 “左上平面” 进行插值， 否则用 “右下平面” 进行插值。</p>
-<blockquote>
-<p>判断４个点在同一平面上的方法：（以情况1为例）</p>
-<ul>
-<li><p>对于判断s0、s2、s1、s8 ４ 点是否在同一平面上， 只需要判断z0 + z1与z2 + z8是否相等即可； </p>
-</li>
-<li><p>对于s0、s1、s2、s5 ４点， 只需要判断z0 + z2与z1 + z5是否相等即可； </p>
-</li>
-<li><p>对于s0、s1、s2、s6 ４点：如果s0、s2、s6 ３点在同一直线上， 则直线外一点s1与该直线就可以确定一个平面，而要判断这三点是否在同一直线上，只需判断z2 + z6与2 * z0是否相等即可【线段s2(1, 0, z2) s6(-1, 0, z6) 的中点坐标为(0, 0, z2 + z6)，若z2 + z6 = 2 * z0， 则点s0(0, 0, z0)就是它们的中点坐标，当然这３点就在同一条直线上】； </p>
-</li>
-<li><p>对于s0、s1、s2、s4   ４点， 与s0、s1、s2、s6 ４ 点的情况相同。</p>
-</li>
-</ul>
-</blockquote>
-</li>
-<li><p>如果2和3两点中的情形均不满足， 说明待插入点周围的情况太复杂（不符合平面插值）， 此时采用<strong>双线性法</strong>进行插值。</p>
+<li><p>帮助人们创造并享受音乐 —— 让音乐成为生活中有趣的部分。</p>
 </li>
 </ol>
-<p>基于以上算法思想，编写python函数代码实现图像放缩与旋转过程中的四平面法插值：</p>
-<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 四平面法插值实现图像放缩</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">four_plane_interpolation</span>(<span class="params">img, scale</span>):</span><br><span class="line">    H, W, C = img.shape</span><br><span class="line">    new_H, new_W = <span class="built_in">int</span>(H * scale), <span class="built_in">int</span>(W * scale)</span><br><span class="line">    output = np.zeros((new_H, new_W, C), dtype=img.dtype)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> y <span class="keyword">in</span> <span class="built_in">range</span>(new_H):</span><br><span class="line">        <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(new_W):</span><br><span class="line">            <span class="comment"># 计算原图对应坐标（浮点数）</span></span><br><span class="line">            src_x = x / scale</span><br><span class="line">            src_y = y / scale</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 获取周围4个整数坐标点</span></span><br><span class="line">            x0, y0 = <span class="built_in">int</span>(np.floor(src_x)), <span class="built_in">int</span>(np.floor(src_y))</span><br><span class="line">            x1, y1 = <span class="built_in">min</span>(x0 + <span class="number">1</span>, W - <span class="number">1</span>), <span class="built_in">min</span>(y0 + <span class="number">1</span>, H - <span class="number">1</span>)</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 获取4个点的颜色值（z坐标）</span></span><br><span class="line">            s0 = img[y0, x0]</span><br><span class="line">            s1 = img[y0, x1]</span><br><span class="line">            s2 = img[y1, x0]</span><br><span class="line">            s3 = img[y1, x1]</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 计算相对位置（归一化到[0,1]）</span></span><br><span class="line">            dx = src_x - x0</span><br><span class="line">            dy = src_y - y0</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 判断四点是否共面（z1 + z2 ≈ z0 + z3）</span></span><br><span class="line">            <span class="keyword">if</span> np.allclose(s1 + s2, s0 + s3, atol=<span class="number">1e-6</span>):</span><br><span class="line">                <span class="comment"># 共面时，选择任意平面（此处用左下平面）</span></span><br><span class="line">                interpolated = s0 + (s2 - s0) * dx + (s1 - s0) * dy</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="comment"># 不共面时，动态选择平面</span></span><br><span class="line">                <span class="comment"># 获取周围12个参考点（简化实现，仅取最近邻）</span></span><br><span class="line">                <span class="comment"># 注：论文中需判断参考点是否共面，此处简化逻辑</span></span><br><span class="line">                <span class="keyword">if</span> dy &gt; <span class="number">1</span> - dx:  <span class="comment"># 对角线 y = 1 - x 上方</span></span><br><span class="line">                    <span class="comment"># 选择右上平面</span></span><br><span class="line">                    interpolated = (s3 - s1) * dx + (s3 - s2) * dy + (s2 + s1 - s3)</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    <span class="comment"># 选择左下平面</span></span><br><span class="line">                    interpolated = s0 + (s2 - s0) * dx + (s1 - s0) * dy</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 边界检查</span></span><br><span class="line">            interpolated = np.clip(interpolated, <span class="number">0</span>, <span class="number">255</span> <span class="keyword">if</span> img.dtype == np.uint8 <span class="keyword">else</span> <span class="number">1.0</span>)</span><br><span class="line">            output[y, x] = interpolated</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> output</span><br><span class="line"></span><br><span class="line"><span class="comment"># 四平面法插值实现图像旋转</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">four_plane_rotation</span>(<span class="params">image, angle</span>):</span><br><span class="line">    h, w, channel = image.shape</span><br><span class="line">    angle_rad = math.radians(angle)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 计算旋转后的图像尺寸</span></span><br><span class="line">    cos_theta = <span class="built_in">abs</span>(math.cos(angle_rad))</span><br><span class="line">    sin_theta = <span class="built_in">abs</span>(math.sin(angle_rad))</span><br><span class="line">    new_w = <span class="built_in">int</span>(h * sin_theta + w * cos_theta)</span><br><span class="line">    new_h = <span class="built_in">int</span>(h * cos_theta + w * sin_theta)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 旋转中心</span></span><br><span class="line">    cx, cy = w / <span class="number">2</span>, h / <span class="number">2</span></span><br><span class="line">    new_cx, new_cy = new_w / <span class="number">2</span>, new_h / <span class="number">2</span></span><br><span class="line">    </span><br><span class="line">    rotated_image = np.zeros((new_h, new_w, channel), dtype=image.dtype)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(new_h):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(new_w):</span><br><span class="line">            <span class="comment"># 将新图像坐标转换回原图像坐标</span></span><br><span class="line">            x = (j - new_cx) * math.cos(angle_rad) + (i - new_cy) * math.sin(angle_rad) + cx</span><br><span class="line">            y = -(j - new_cx) * math.sin(angle_rad) + (i - new_cy) * math.cos(angle_rad) + cy</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 边界检查</span></span><br><span class="line">            <span class="keyword">if</span> <span class="number">0</span> &lt;= x &lt; w <span class="keyword">and</span> <span class="number">0</span> &lt;= y &lt; h:</span><br><span class="line">                <span class="comment"># 获取周围4个整数坐标点</span></span><br><span class="line">                x0, y0 = <span class="built_in">int</span>(np.floor(x)), <span class="built_in">int</span>(np.floor(y))</span><br><span class="line">                x1, y1 = <span class="built_in">min</span>(x0 + <span class="number">1</span>, w - <span class="number">1</span>), <span class="built_in">min</span>(y0 + <span class="number">1</span>, h - <span class="number">1</span>)</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 获取4个点的颜色值</span></span><br><span class="line">                s0 = image[y0, x0]</span><br><span class="line">                s1 = image[y0, x1]</span><br><span class="line">                s2 = image[y1, x0]</span><br><span class="line">                s3 = image[y1, x1]</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 计算相对位置</span></span><br><span class="line">                dx = x - x0</span><br><span class="line">                dy = y - y0</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 判断四点是否共面</span></span><br><span class="line">                <span class="keyword">if</span> np.allclose(s1 + s2, s0 + s3, atol=<span class="number">1e-6</span>):</span><br><span class="line">                    <span class="comment"># 共面时，选择任意平面（此处用左下平面）</span></span><br><span class="line">                    interpolated = s0 + (s2 - s0) * dy + (s1 - s0) * dx</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    <span class="comment"># 不共面时，动态选择平面</span></span><br><span class="line">                    <span class="keyword">if</span> dy &gt; <span class="number">1</span> - dx:  <span class="comment"># 对角线 y = 1 - x 上方</span></span><br><span class="line">                        <span class="comment"># 选择右上平面</span></span><br><span class="line">                        interpolated = (s3 - s1) * dx + (s3 - s2) * dy + (s2 + s1 - s3)</span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        <span class="comment"># 选择左下平面</span></span><br><span class="line">                        interpolated = s0 + (s2 - s0) * dy + (s1 - s0) * dx</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 边界检查</span></span><br><span class="line">                interpolated = np.clip(interpolated, <span class="number">0</span>, <span class="number">255</span> <span class="keyword">if</span> image.dtype == np.uint8 <span class="keyword">else</span> <span class="number">1.0</span>)</span><br><span class="line">                rotated_image[i, j] = interpolated</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> rotated_image</span><br></pre></td></tr></tbody></table></figure>
-
-<h2 id="实验测试结果分析"><a href="#实验测试结果分析" class="headerlink" title="实验测试结果分析"></a>实验测试结果分析</h2><p>一个理想的插值算法对一幅图像逆时针旋转若干度，再顺时针旋转若干度，应该与原图像相同；同理，对一幅图像放大若干倍，再缩小若干倍，也应该与原图像相同。 基于此，将下面的4幅图像分别用4种算法先逆时针旋转45°，再顺时针旋转45°；先放大４倍，再缩小４倍，然后分别用峰值信噪比（PSNR）验证各算法的优劣。 </p>
-<p><img src="/images/project2/5.jpg" alt="1琳娜"></p>
-<p><img src="/images/project2/6.jpg" alt="2辣椒"></p>
-<p><img src="/images/project2/7.jpg" alt="3狒狒"></p>
-<p><img src="/images/project2/8.jpg" alt="4房子"></p>
-<p>从定性实验的效果角度，上述四幅图像通过常用的三种分段插值算法完成上述的放大与旋转任务后得到的结果如下图所示：</p>
-<p><img src="/images/project2/Figure_1.png" alt="1琳娜传统result"></p>
-<p><img src="/images/project2/Figure_2.png" alt="2辣椒传统result"></p>
-<p><img src="/images/project2/Figure_3.png" alt="3狒狒传统result"></p>
-<p><img src="/images/project2/Figure_4.png" alt="4房子传统result"></p>
-<p>从实验结果上来看，最近邻算法的边缘颜色“最醒目”，且出现了较为严重的“锯齿形”边缘现象；双线性算法的边缘颜色“最暗淡”；双线性算法和双三次算法也有“锯齿形”边缘现象， 但视觉效果相比最近邻算法而言并不明显。</p>
-<p>通过改进的四平面插值算法，对上述四幅图像完成上述的放大与旋转任务后得到的结果如下图所示：</p>
-<p><img src="/images/project2/Figure_5.png" alt="1琳娜四平面result"></p>
-<p><img src="/images/project2/Figure_6.png" alt="2辣椒四平面result"></p>
-<p><img src="/images/project2/Figure_7.png" alt="3狒狒四平面result"></p>
-<p><img src="/images/project2/Figure_8.png" alt="4房子四平面result"></p>
-<p>可以看到，四平面插值算法处理后的图像斜线边缘部分是 “光滑连续” 的， 视觉效果比较好，同时有效避免了“锯齿形”边缘现象和“马赛克”现象。</p>
-<p>从定量实验的数据角度，我们对于各图像用不同算法完成上述旋转与放缩任务后得到的图像峰值信噪比与算法运行时间进行了计算与统计，结果如下表所示：</p>
-<blockquote>
-<p>峰值信噪比(PSNR)用于表示信号的最大可能功率与影响其表示的保真度的破坏噪声的功率之间的比率。PSNR在图像处理上主要用于量化受有损压缩影响的图像和视频的重建质量。</p>
-<p>PSNR 通过均方误差( MSE ) 定义。</p>
-<p>给定一个无噪声的m×n单色图像I及其噪声近似值K，MSE定义为：<br>$$<br>MSE=\frac{1}{mn}\sum_{i=0}^{m-1}\sum_{j=0}^{n-1}[I(i,j)-K(i,j)]^2.<br>$$<br>故PSNR定义为：<br>$$<br>\begin{aligned}\mathrm{PSNR}&amp;=10\cdot\log_{10}\left(\frac{MAX_I^2}{MSE}\right)\&amp;=20\cdot\log_{10}\left(\frac{MAX_I}{\sqrt{MSE}}\right)\&amp;=20\cdot\log_{10}(MAX_I)-10\cdot\log_{10}(MSE).\end{aligned}<br>$$<br>一般而言，通过PSNR来判断处理后图像的失真情况有如下通用结论：</p>
-<ul>
-<li>PSNR &gt; 30 dB：图像质量较好，失真不明显。</li>
-<li>PSNR 20~30 dB：中等质量，存在可察觉失真。</li>
-<li>PSNR &lt; 20 dB：质量较差，失真显著。</li>
+<h3 id="项目背景"><a href="#项目背景" class="headerlink" title="项目背景"></a>项目背景</h3><p>机器人技术在当今社会已不再局限于工业生产线，而是逐渐渗透到各个领域，并在艺术领域展现出其独特的潜力和广阔的应用前景。小提琴自动演奏机器人正是这一趋势下的产物，它代表了精密机械、控制系统、人工智能等多学科交叉融合的最新成果。小提琴演奏作为一门高度复杂的艺术形式，对演奏者的生理和心理素质提出了极高的要求，需要长期的专业训练才能掌握其精髓。然而，机器人技术的发展为突破人类生理极限、实现音乐的自动化演奏提供了可能。</p>
+<h3 id="项目意义"><a href="#项目意义" class="headerlink" title="项目意义"></a>项目意义</h3><h4 id="从用户需求出发"><a href="#从用户需求出发" class="headerlink" title="从用户需求出发"></a>从用户需求出发</h4><p>“让沉睡的琴声醒来。”在中国家庭中，数百万把价值不菲的小提琴正面临被束之高阁的命运——调查显示，超过60%的家庭小提琴在购买后三年内沦为摆设。我们的自演奏小提琴项目应运而生，我们通过智能演奏再生系统，让每一把被遗忘的小提琴重新焕发生机，成为家庭美育的活跃分子。</p>
+<p>我们的自动演奏核心能让闲置的小提琴自主发声：清晨自动演奏《晨曲》唤醒全家，晚餐时即兴伴奏营造温馨氛围，睡前播放舒缓旋律助眠。通过智能琴弦驱动技术，无需人工干预，就能使小提琴持续输出高品质音乐，解决”买来就闲置”的痛点。对于仍有学习需求的家庭，我们考虑提供双模陪伴系统：在练习时，AI可同步示范标准演奏；在休息时，系统会自动播放经典曲目进行熏陶。特别设计的成长记忆功能会记录孩子的练习历程，定期生成”音乐成长报告”，让家长直观看到投资回报。</p>
+<p>从技术到体验，我们的项目始终围绕一个核心：让每一把被冷落的小提琴重新获得宠爱。我们不只是提供硬件，更是提供一种全新的乐器使用理念——当您的小提琴能够自主创造价值时，闲置将永远成为过去式。</p>
+<h4 id="其他意义"><a href="#其他意义" class="headerlink" title="其他意义"></a>其他意义</h4><ul>
+<li><p>推动技术进步：项目涉及精密机械设计、高性能驱动控制、复杂路径规划、实时传感反馈和人工智能算法等多个前沿领域，其研发过程将极大地推动这些交叉学科的技术进步。</p>
+</li>
+<li><p>创新音乐教育：作为一种辅助教学工具，小提琴自动演奏机器人可以帮助学生更好地理解和掌握演奏技巧，普及音乐教育，激发更多人对音乐的兴趣。</p>
+</li>
+<li><p>拓展艺术表现：机器人演奏为音乐创作和表演提供了新的可能性，艺术家可以利用机器人创造出人类难以实现的音效和演奏技巧，从而拓展艺术表现的边界。</p>
+</li>
+<li><p>文化传承与保护：通过数字化记录和机器人演奏，可以有效地传承和保护濒临失传的演奏技巧和音乐文化遗产。</p>
+</li>
+<li><p>人才培养实践：该项目为多学科交叉工程实践提供了宝贵的平台，有助于培养具备复合型知识和创新能力的优秀人才。</p>
+</li>
+<li><p>成本效益与普及性：随着技术的不断成熟和成本的降低，小提琴自动演奏机器人有望走向市场普及，让更多人能够接触和享受高品质的音乐演奏。</p>
+</li>
 </ul>
-<p>实际计算时，采用opencv自带的PSNR方法cv2.PSNR(img, output)对原始图像与处理后图像的PSNR进行比较计算。</p>
-</blockquote>
-<table>
+<h2 id="材料选择"><a href="#材料选择" class="headerlink" title="材料选择"></a>材料选择</h2><p>小提琴自动演奏机器人中关键构件的材料选择至关重要，它直接影响着机器人的性能、精度、寿命和成本。在选择材料时，需要综合考虑其力学性能(如强度、硬度、韧性、耐疲劳性)、物理性能(如密度、热膨胀系数)、化学性能(如耐腐蚀性)、加工性能以及成本等因素。以下将详细阐述齿轮、运弓机构和按弦机构的材料选择及其理由。</p>
+<h3 id="齿轮材料选择"><a href="#齿轮材料选择" class="headerlink" title="齿轮材料选择"></a>齿轮材料选择</h3><p>齿轮作为核心传动部件，其材料选择需满足高强度、高硬度、优异的耐磨性和抗疲劳性能，以确保在频繁启停和变速条件下保持稳定的性能和精度，并有效降低噪音。根据项目需求和常见齿轮材料特性，做出以下选择：</p>
+<ul>
+<li>合金钢（<strong>Bow Controller</strong>）（齿轮、齿条）：20CrMnTi。这种材料经过渗碳淬火回火处理后，表面硬度可达到HRC58-62，心部仍保持高韧性。其优点在于强度高、耐疲劳性能优异，能够承受较大的载荷和冲击，适用于主传动系统，确保齿轮的高精度、高强度和长寿命。同时，其良好的耐磨性有助于延长齿轮的使用寿命。</li>
+<li>工程塑料（<strong>Fingerboard traversal</strong>）（齿轮）：POM(聚甲醛)。工程塑料齿轮具有低噪音、自润滑、轻量化和耐腐蚀的优点。在对噪音要求较高或载荷较小的辅助传动系统中，可以考虑使用POM齿轮，以降低整体噪音并减轻重量。然而，其承载能力相对较低，不适用于主传动或高载荷场合。</li>
+</ul>
+<p>对于小提琴自动演奏机器人这种对精度和稳定性要求极高的设备，主传动系统中的齿轮必须采用高强度合金钢20CrMnTi，以确保其在长期高频运转条件下具备出色的耐疲劳特性和精度保持能力。而对于一些次级传动或对噪音控制有更高要求的部位，可以辅助性地采用工程塑料齿轮，以平衡性能与成本，并进一步降低噪音。此外，精确的热处理(如淬火和回火)对于高强度合金钢齿轮至关重要，它能使其获得理想的表面硬度和耐疲劳性能。此外，经过查阅资料，对于噪音敏感的部件，还可以考虑在金属齿轮表面施加DLC(类金刚石)涂层，以提高耐磨性和降低摩擦噪音。</p>
+<h3 id="运弓（Bow-Controller）构件材料选择"><a href="#运弓（Bow-Controller）构件材料选择" class="headerlink" title="运弓（Bow Controller）构件材料选择"></a>运弓（Bow Controller）构件材料选择</h3><p>运弓机构需要实现轻量化、高刚度、多自由度控制以及平稳性与稳定性，以模拟人类运弓的精细动作。因此，材料选择应侧重于比强度、比刚度、阻尼性能和加工性。</p>
+<ul>
+<li><p>碳纤维复合材料（主体部分）：碳纤维复合材料具有极高的比强度和比刚度，同时具备良好的阻尼性能，能够有效抑制振动。将其应用于运弓机构主体，可以显著减轻运弓机构的重量，从而减小运动惯性，提高系统的响应速度和控制精度。其优异的力学性能确保了运弓机构在高速往复运动中的稳定性。</p>
+</li>
+<li><p>铝合金 **(<strong>连接件、标准件</strong>)**：主要采用 7075、6061。铝合金具有重量轻、易于CNC加工的特点，成本相对较低。适用于运弓机构的连接件和支撑结构，可以在保证一定强度的前提下，平衡整体重量和制造成本。</p>
+</li>
+</ul>
+<p>运弓作为直接与琴弦接触并进行高速往复运动的关键部件，其轻量化和高刚度是实现高精度控制和快速响应的基础。碳纤维复合材料能够完美满足这些要求，使其成为运弓主体的理想选择。而铝合金则可以作为辅助材料，用于制造对刚度要求稍低但需要精密加工的连接部件，以实现整体性能和成本的优化。</p>
+<h3 id="按弦（Fingerboard-traversal）构件材料选择"><a href="#按弦（Fingerboard-traversal）构件材料选择" class="headerlink" title="按弦（Fingerboard traversal）构件材料选择"></a>按弦（Fingerboard traversal）构件材料选择</h3><p>按弦机构需要实现高精度定位、快速响应和可调按压力，并模拟多指操作。因此，其材料选择需具备高强度、耐腐蚀、表面光洁度高和低摩擦等特性。</p>
+<ul>
+<li><p>不锈钢 **(<strong>电机传动齿轮</strong>)**：例如304、316L。不锈钢具有优异的耐腐蚀性和高强度，表面易于抛光，能够获得较高的光洁度，从而降低摩擦系数。将其应用于按弦杆，可以保证按弦动作的长期稳定性和精度，并能有效抵抗琴板处手部汗液等可能造成的腐蚀。</p>
+</li>
+<li><p>工程塑料 **(<strong>模组滑轨</strong>)**：PEEK (聚醚醚酮)、UHMW-PE(超高分子量聚乙烯)。 PEEK 具有自润滑和耐磨特性，UHMW-PE则具有极低的摩擦系数。这些材料适用于按弦机构中的导套、滑块等部件，可以进一步降低摩擦阻力，提高机构的灵敏度和响应速度。</p>
+</li>
+</ul>
+<p>按弦杆需要频繁、精确地按压琴弦，因此材料的强度、耐磨性和表面光洁度至关重要。不锈钢能够提供所需的力学性能和表面特性，确保按弦动作的准确性和稳定性。而高性能工程塑料则可以作为辅助材料，用于制造需要低摩擦和自润滑特性的部件，以优化按弦机构的整体性能。</p>
+<h3 id="材料类型对比总结"><a href="#材料类型对比总结" class="headerlink" title="材料类型对比总结"></a>材料类型对比总结</h3><table>
 <thead>
 <tr>
-<th>测试图像</th>
-<th>最近邻插值PSNR</th>
-<th>双线性插值PSNR</th>
-<th>双立方插值PSNR</th>
-<th>四平面插值PSNR</th>
+<th><strong>材料类型</strong></th>
+<th><strong>优点</strong></th>
+<th><strong>缺点</strong></th>
+<th><strong>适用部位</strong></th>
 </tr>
 </thead>
 <tbody><tr>
-<td>琳娜（269*269）</td>
-<td>20.74217399</td>
-<td>27.11906575</td>
-<td>29.36532325</td>
-<td>36.70765842</td>
+<td><strong>高强度合金钢</strong></td>
+<td>强度高、耐疲劳、耐磨</td>
+<td>重量大、成本高</td>
+<td>主传动系统（齿轮）</td>
 </tr>
 <tr>
-<td>辣椒（268*268）</td>
-<td>22.92424674</td>
-<td>27.91435345</td>
-<td>31.04713312</td>
-<td>39.25866529</td>
+<td><strong>不锈钢</strong></td>
+<td>耐腐蚀、表面光洁度高</td>
+<td>硬度相对较低</td>
+<td>按弦杆、外露部件</td>
 </tr>
 <tr>
-<td>狒狒（268*268）</td>
-<td>21.8194312</td>
-<td>28.06968286</td>
-<td>29.12614241</td>
-<td>38.2193871</td>
+<td><strong>工程塑料</strong></td>
+<td>轻量、低噪音、自润滑、 耐腐蚀</td>
+<td>强度低、易磨损、承载 能力有限</td>
+<td>次级传动系统（齿轮）、 导套、滑块</td>
 </tr>
 <tr>
-<td>房子（256*256）</td>
-<td>22.34146151</td>
-<td>26.21366716</td>
-<td>30.67389681</td>
-<td>38.8204405</td>
+<td><strong>铝合金</strong></td>
+<td>重量轻、散热好、易于 CNC 加工</td>
+<td>耐磨性差</td>
+<td>连接件、支撑结构</td>
+</tr>
+<tr>
+<td><strong>碳纤维复合材料</strong></td>
+<td>极高比强度和比刚度、良 好阻尼性能、轻量化</td>
+<td>成本高、加工复杂</td>
+<td>运弓主体</td>
 </tr>
 </tbody></table>
+<p>综合来看，小提琴自动演奏机器人设计过程中，材料选择是一个多目标优化的过程，需要在性能、成本、加工性等方面进行权衡。通过合理搭配不同材料，可以最大限度地发挥各材料的优势，从而实现机器人的高性能、高精度和长寿命运行。</p>
+<h2 id="关键构件设计与建模"><a href="#关键构件设计与建模" class="headerlink" title="关键构件设计与建模"></a>关键构件设计与建模</h2><p>通过机械结构代替演奏者的左右手运动，实现小提琴的自动演奏功能，且演奏能够达到学习两年的演奏者水平。</p>
+<p>将整琴分为运弓和按压两个模块，根据小提琴的四弦特性，又可将各模块分为单弦上的小模组。利用模块化设计，首先实现单弦的按压和拉弓功能，再将单个模组衍生至整把小提琴的自动演奏。</p>
+<p><img src="/media/3d239eca679aa3d7ead77ecaff57801c.jpg" alt="总体框架"></p>
+<p>本节将详细阐述小提琴自动演奏机器人中关键构件的设计理念、详细尺寸参数及其设计理由，并展示其三维模型。</p>
+<h3 id="齿轮设计与建模"><a href="#齿轮设计与建模" class="headerlink" title="齿轮设计与建模"></a>齿轮设计与建模</h3><h4 id="设计理念与理由"><a href="#设计理念与理由" class="headerlink" title="设计理念与理由"></a>设计理念与理由</h4><ul>
+<li>高精度传动：为确保运弓和按弦动作的精确性，齿轮传动系统必须达到极高的精度。因此，设计中采用ISO5级或更高精度的齿轮，以最大限度地减小传动误差，保证音准的准确性和一致性。</li>
+<li>低噪音运行：齿轮啮合产生的噪音会直接影响演奏音质。为降低噪音，设计中优化了齿轮齿形，采用修形齿轮，并选择合适的模数和齿数，以减少啮合冲击和滑动摩擦。斜齿轮相较于直齿轮，具有渐进啮合的特点，能够显著降低冲击和振动，从而有效降低噪音。</li>
+<li>紧凑型设计：考虑到机器人内部空间有限，设计中倾向于采用行星齿轮传动或谐波齿轮传动等紧凑型结构，以在有限空间内实现大传动比，满足机器人小型化和集成化的需求。</li>
+<li>长寿命可靠性：频繁的演奏操作要求齿轮具备出色的耐疲劳特性。通过选用优质材料并结合适当的热处理工艺，确保齿轮具有足够的强度和耐磨性，以满足长期稳定运行的需求。</li>
+</ul>
+<h4 id="初代齿轮基本参数与计算"><a href="#初代齿轮基本参数与计算" class="headerlink" title="初代齿轮基本参数与计算"></a>初代齿轮基本参数与计算</h4><p>根据项目提供的参数，我们以一个模数(m)为 1mm，齿数(Z)为 60 的齿轮为例，进行主要尺寸参数的计算：</p>
+<ul>
+<li><p>模数(m)：1mm</p>
+</li>
+<li><p>齿数(Z)：60</p>
+</li>
+<li><p>齿根半径：0.5mm</p>
+</li>
+<li><p>厚度：5mm</p>
+</li>
+<li><p>孔径：8mm</p>
+</li>
+</ul>
+<p>基于这些基本参数，可以计算出齿轮的其他关键尺寸：</p>
+<ul>
+<li><p>分度圆直径(d)：d=m*z=1mm*60=60mm</p>
+</li>
+<li><p>齿顶高(ha)：ha=1mm</p>
+</li>
+<li><p>齿根高(hf)：hf=1.25*m=1.25*1=1.25mm</p>
+</li>
+<li><p>齿顶圆直径(da)：da=d+2*ha=60+2*1=62mm</p>
+</li>
+<li><p>齿根圆直径(df)：df=d-2*hf=60-2*1.25=57.5mm</p>
+</li>
+</ul>
+<p>参数选择说明：</p>
+<ul>
+<li><p>齿数 60：选择 60齿的齿轮有助于实现紧凑型设计，并在保证传动比的同时，提供精细的运动控制能力。</p>
+</li>
+<li><p>齿根半径0.5mm：较小的齿根半径有助于减小齿根处的应力集中，从而提高齿轮的疲劳强度，延长使用寿命。</p>
+</li>
+<li><p>厚度 5mm：5mm的厚度旨在保证齿轮在承受载荷时的承载能力和整体刚度，防止变形。</p>
+</li>
+<li><p>孔径 8mm：8mm的孔径设计用于与电机轴进行匹配，并考虑采用键槽连接方式，以确保可靠的动力传输。</p>
+</li>
+</ul>
+<h4 id="斜齿轮齿条设计需求与优化目标"><a href="#斜齿轮齿条设计需求与优化目标" class="headerlink" title="斜齿轮齿条设计需求与优化目标"></a>斜齿轮齿条设计需求与优化目标</h4><p>针对小提琴自动演奏机器人对噪音和运动平稳性的高要求，斜齿轮齿条的设计尤为关键。直齿轮在高速运行时容易产生较大的冲击和噪音，而斜齿轮则能有效改善这一问题。</p>
+<p>设计需求：</p>
+<ul>
+<li><p>直齿轮冲击振动大，噪音峰值突出，不适用于本机器人系统。</p>
+</li>
+<li><p>速度需大于 120mm/s。</p>
+</li>
+<li><p>噪音需控制在 35dB 以下。</p>
+</li>
+<li><p>阻力需小于 5N。</p>
+</li>
+<li><p>要求往复运动具有高稳定性。</p>
+</li>
+</ul>
+<p>设计思路与优化目标:</p>
+<ul>
+<li><p>螺旋角：选择15°～25°的螺旋角，以实现渐进啮合，从而降低啮合冲击力，减少噪音和振动。设计值设定为20°，优化目标是在轴向力与噪音之间取得最佳平衡。</p>
+</li>
+<li><p>齿向修形：通过对齿向进行修形，可以有效补偿偏载，使齿轮在实际运行中受力更加均匀，提高传动平稳性。</p>
+</li>
+<li><p>齿廓抛物线修型：对齿廓进行抛物线修型，可以消除啮合干涉，进一步优化啮合性能，降低噪音。</p>
+</li>
+</ul>
+<p>参数与设计值及优化目标：</p>
 <table>
 <thead>
 <tr>
-<th>插值算法</th>
-<th>最近邻法</th>
-<th>双线性法</th>
-<th>双立方法</th>
-<th>四平面法</th>
+<th><strong>参数</strong></th>
+<th><strong>设计值</strong></th>
+<th><strong>优化目标</strong></th>
+<th><strong>作用</strong></th>
 </tr>
 </thead>
 <tbody><tr>
-<td>算法运行平均用时</td>
-<td>0.678485751</td>
-<td>3.293492556</td>
-<td>92.66596091</td>
-<td>15.02119243</td>
+<td><strong>模数(m)</strong></td>
+<td>1.5-2mm</td>
+<td>轻量化与强度平衡</td>
+<td>决定齿轮尺寸和承载能力</td>
+</tr>
+<tr>
+<td><strong>螺旋角( β )</strong></td>
+<td>20°</td>
+<td>轴向力与噪音平衡</td>
+<td>影响啮合平稳性和轴向力</td>
+</tr>
+<tr>
+<td><strong>压力角( α )</strong></td>
+<td>20°</td>
+<td>传动效率最大化</td>
+<td>影响齿轮啮合特性和传动效率</td>
+</tr>
+<tr>
+<td><strong>齿宽(b)</strong></td>
+<td>25mm</td>
+<td>承载能力提升 30%</td>
+<td>影响齿轮的强度和刚度</td>
+</tr>
+<tr>
+<td><strong>重合度( ε )</strong></td>
+<td>2.1</td>
+<td>≥2.0 确保连续性</td>
+<td>保证齿轮啮合的连续性和平稳性</td>
 </tr>
 </tbody></table>
-<p>通过对比上述定量实验结果可以发现，在传统的三种分段插值算法中，随着运算阶数（采样待插值点周围的原图像像素点颜色值信息）的增加，图像经过放缩与旋转处理后的失真程度有明显降低，但仍大致处于存在可察觉失真的区间，且算法运行用时也逐渐增加（事实上双立方法的实现可以在编程层面实现优化，这里只是为更直观地展现O（n^2）时间复杂度在图像大小达到一定规模时的显著影响）；而引入的四平面算法不仅在失真程度上较传统的插值算法均有显著改善，算法运行用时也明显优于传统算法中效果最好的双立方法。</p>
-<p>综合以上的定性与定量实验结果及分析，本文提出的基于四平面的图像插值算法在图像处理效果（失真）与运行效率上均较传统算法有明显提升，这充分证明了该算法的有效性。</p>
-<p>将上文提到的全部四种算法及旋转与放缩两种功能集成到基于python的gui可视化系统中，并打包成exe可执行文件，制作了一个基于插值的图像处理系统，基本功能演示如下图所示：</p>
-<p><img src="/images/project2/1.png" alt="gui演示1"></p>
-<p><img src="/images/project2/2.png" alt="gui演示2"></p>
-<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1] 王开荣,杨大地编著.应用数值分析[M].高等教育出版社,2010.</p>
-<p>[2] 毛伟伟,于素萍,石念峰.一种基于四平面的图像插值算法[J].洛阳理工学院学报(自然科学版),2024,34(01):76-81.</p>
-<p>[3] 刘显德,李笑.任意大小图像的量子描述及双线性插值方法[J].计算机工程与设计,2024,45(08):2423-2432.</p>
-<p>[4] 张喜民,詹海生.基于双三次插值的Canny-Devernay亚像素图像边缘检测算法[J].现代制造工程,2025,(03):107-114.</p>
-<p>[5] 陈玲玲,周宁,殷永,等.插值方法在光声图像重建中的应用[J].计算机与数字工程,2013,41(10):1676-1677+1694.</p>
-</div></div></article></div><nav class="pagination" role="navigation" aria-label="pagination"><div class="pagination-previous"><a href="/">上一页</a></div><div class="pagination-next"><a href="/page/3/">下一页</a></div><ul class="pagination-list is-hidden-mobile"><li><a class="pagination-link" href="/">1</a></li><li><a class="pagination-link is-current" href="/page/2/">2</a></li><li><a class="pagination-link" href="/page/3/">3</a></li><li><span class="pagination-ellipsis">…</span></li><li><a class="pagination-link" href="/page/32/">32</a></li></ul></nav></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1 is-sticky"><!--!--><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar is-rounded" src="/img/head2.png" alt="Jinghua Xu"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">Jinghua Xu</p><p class="is-size-6 is-block">明月科创实验班人工智能专业 本科大三在读</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>重庆 重庆大学国家卓越工程师学院</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">32</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">22</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">91</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/Asgard-Tim" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Weibo" href="https://www.weibo.com/u/6315188431"><i class="fab fa-weibo"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Bilibili" href="https://space.bilibili.com/171895120"><i class="fab fa-bilibili"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Email" href="mailto:20224546@stu.cqu.edu.cn"><i class="fas fa-envelope"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Phone" href="tel:+86 19132050174"><i class="fas fa-phone"></i></a></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><figure class="media-left"><a class="image" href="/2025/04/23/project02/"><img src="/images/project2/1.png" alt="图像插值算法及其优化"></a></figure><div class="media-content"><p class="date"><time datetime="2025-04-22T18:07:03.000Z">2025-04-23</time></p><p class="title"><a href="/2025/04/23/project02/">图像插值算法及其优化</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E6%95%B0%E5%80%BC%E5%88%86%E6%9E%90/">工程数值分析</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/04/18/3DVLA/"><img src="/images/3dvla/6.png" alt="3D-VLA： A 3DVision-Language-Action Generative World Model"></a></figure><div class="media-content"><p class="date"><time datetime="2025-04-18T11:00:03.000Z">2025-04-18</time></p><p class="title"><a href="/2025/04/18/3DVLA/">3D-VLA： A 3DVision-Language-Action Generative World Model</a></p><p class="categories"><a href="/categories/%E5%85%B7%E8%BA%AB%E6%99%BA%E8%83%BD%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">具身智能论文阅读</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/04/10/project01/"><img src="/images/project01/17.png" alt="求矩阵特征值与特征向量：乘幂法及其改进算法"></a></figure><div class="media-content"><p class="date"><time datetime="2025-04-10T09:44:03.000Z">2025-04-10</time></p><p class="title"><a href="/2025/04/10/project01/">求矩阵特征值与特征向量：乘幂法及其改进算法</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E6%95%B0%E5%80%BC%E5%88%86%E6%9E%90/">工程数值分析</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/04/07/%E7%AC%AC%E4%BA%8C%E7%AB%A0%20%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"><img src="/images/phi.png" alt="第二章 数据结构"></a></figure><div class="media-content"><p class="date"><time datetime="2025-04-07T05:26:58.000Z">2025-04-07</time></p><p class="title"><a href="/2025/04/07/%E7%AC%AC%E4%BA%8C%E7%AB%A0%20%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">第二章 数据结构</a></p><p class="categories"><a href="/categories/%E7%AE%97%E6%B3%95%E5%9F%BA%E7%A1%80%E8%AF%BE/">算法基础课</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/04/06/RT-1/"><img src="/images/rt1/1.png" alt="RT-1：Robotics Transformer for Real-world Control at Scale"></a></figure><div class="media-content"><p class="date"><time datetime="2025-04-06T09:24:03.000Z">2025-04-06</time></p><p class="title"><a href="/2025/04/06/RT-1/">RT-1：Robotics Transformer for Real-world Control at Scale</a></p><p class="categories"><a href="/categories/%E5%85%B7%E8%BA%AB%E6%99%BA%E8%83%BD%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">具身智能论文阅读</a></p></div></article></div></div><div class="column-right-shadow is-hidden-widescreen"></div></div><div class="column column-right is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only order-3"><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/About-XJH/"><span class="level-start"><span class="level-item">About XJH</span></span><span class="level-end"><span class="level-item tag">2</span></span></a><ul><li><a class="level is-mobile" href="/categories/About-XJH/%E6%98%8E%E6%85%B5/"><span class="level-start"><span class="level-item">明慵</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/About-XJH/%E6%98%8E%E8%AF%9A/"><span class="level-start"><span class="level-item">明诚</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></li><li><a class="level is-mobile" href="/categories/%E4%B8%AA%E4%BA%BA%E9%A1%B9%E7%9B%AE/"><span class="level-start"><span class="level-item">个人项目</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%85%B7%E8%BA%AB%E6%99%BA%E8%83%BD%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/"><span class="level-start"><span class="level-item">具身智能论文阅读</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8A%A8%E6%89%8B%E5%AD%A6%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">动手学深度学习</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E7%AE%97%E6%B3%95%E5%9F%BA%E7%A1%80%E8%AF%BE/"><span class="level-start"><span class="level-item">算法基础课</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/"><span class="level-start"><span class="level-item">课程项目</span></span><span class="level-end"><span class="level-item tag">23</span></span></a><ul><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E4%BA%A7%E5%93%81%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">产品设计</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95I/"><span class="level-start"><span class="level-item">定量工程设计方法I</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95II/"><span class="level-start"><span class="level-item">定量工程设计方法II</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E6%95%88%E5%AD%A6/"><span class="level-start"><span class="level-item">工效学</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">工程原理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E6%95%B0%E5%80%BC%E5%88%86%E6%9E%90/"><span class="level-start"><span class="level-item">工程数值分析</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">工程设计</span></span><span class="level-end"><span class="level-item tag">5</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86%E6%96%B9%E6%B3%95/"><span class="level-start"><span class="level-item">数学物理方法</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%99%BA%E8%83%BD%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/"><span class="level-start"><span class="level-item">智能图像处理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%9F%BA%E7%A1%80/"><span class="level-start"><span class="level-item">机器人基础</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%A6%82%E7%8E%87%E8%AE%BA%E4%B8%8E%E6%95%B0%E7%90%86%E7%BB%9F%E8%AE%A1/"><span class="level-start"><span class="level-item">概率论与数理统计</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E7%BA%BF%E6%80%A7%E4%BB%A3%E6%95%B0/"><span class="level-start"><span class="level-item">线性代数</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%87%AA%E5%8A%A8%E6%8E%A7%E5%88%B6%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">自动控制原理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">软件设计</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li></ul></li></ul></div></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2025/04/"><span class="level-start"><span class="level-item">四月 2025</span></span><span class="level-end"><span class="level-item tag">5</span></span></a></li><li><a class="level is-mobile" href="/archives/2025/03/"><span class="level-start"><span class="level-item">三月 2025</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2025/02/"><span class="level-start"><span class="level-item">二月 2025</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2025/01/"><span class="level-start"><span class="level-item">一月 2025</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/12/"><span class="level-start"><span class="level-item">十二月 2024</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/06/"><span class="level-start"><span class="level-item">六月 2024</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/02/"><span class="level-start"><span class="level-item">二月 2024</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/01/"><span class="level-start"><span class="level-item">一月 2024</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/12/"><span class="level-start"><span class="level-item">十二月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/11/"><span class="level-start"><span class="level-item">十一月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/10/"><span class="level-start"><span class="level-item">十月 2023</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/09/"><span class="level-start"><span class="level-item">九月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/07/"><span class="level-start"><span class="level-item">七月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/06/"><span class="level-start"><span class="level-item">六月 2023</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/05/"><span class="level-start"><span class="level-item">五月 2023</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/03/"><span class="level-start"><span class="level-item">三月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/02/"><span class="level-start"><span class="level-item">二月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/3D-VLA/"><span class="tag">3D-VLA</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/ADS1292/"><span class="tag">ADS1292</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Arduino/"><span class="tag">Arduino</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Buck%E5%8F%98%E6%8D%A2%E5%99%A8/"><span class="tag">Buck变换器</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/C/"><span class="tag">C++</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/C51/"><span class="tag">C51</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/COMSOL/"><span class="tag">COMSOL</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/ChatGPT/"><span class="tag">ChatGPT</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/FIR/"><span class="tag">FIR</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/FPGA/"><span class="tag">FPGA</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/FreeRTOS/"><span class="tag">FreeRTOS</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/IIR/"><span class="tag">IIR</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Logistic%E5%9B%9E%E5%BD%92/"><span class="tag">Logistic回归</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/MATLAB/"><span class="tag">MATLAB</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Matlab/"><span class="tag">Matlab</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/PID%E9%97%AD%E7%8E%AF%E6%8E%A7%E5%88%B6/"><span class="tag">PID闭环控制</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Python/"><span class="tag">Python</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/QQbot/"><span class="tag">QQbot</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/RANSAC/"><span class="tag">RANSAC</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/ROS/"><span class="tag">ROS</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Robotics-Transformer/"><span class="tag">Robotics Transformer</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/R%E8%AF%AD%E8%A8%80/"><span class="tag">R语言</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/STM32/"><span class="tag">STM32</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Shewhart%E6%8E%A7%E5%88%B6%E5%9B%BE/"><span class="tag">Shewhart控制图</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Ubuntu/"><span class="tag">Ubuntu</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Unity/"><span class="tag">Unity</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/VLA/"><span class="tag">VLA</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/XJH/"><span class="tag">XJH</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%B9%98%E5%B9%82%E6%B3%95/"><span class="tag">乘幂法</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BA%8C%E5%88%86%E7%B1%BB/"><span class="tag">二分类</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BA%A7%E5%93%81%E8%B4%A8%E9%87%8F%E7%AE%A1%E7%90%86/"><span class="tag">产品质量管理</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BA%BA%E6%9C%BA%E4%BA%A4%E4%BA%92/"><span class="tag">人机交互</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BC%A0%E7%83%AD%E5%AD%A6/"><span class="tag">传热学</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BF%A1%E5%8F%B7%E4%B8%8E%E7%B3%BB%E7%BB%9F/"><span class="tag">信号与系统</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%81%87%E8%AE%BE%E6%A3%80%E9%AA%8C/"><span class="tag">假设检验</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2/"><span class="tag">傅里叶变换</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%85%89%E4%BC%8FMPPT/"><span class="tag">光伏MPPT</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%85%B7%E8%BA%AB%E6%99%BA%E8%83%BD/"><span class="tag">具身智能</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8A%A8%E5%8A%9B%E5%AD%A6%E4%BB%BF%E7%9C%9F/"><span class="tag">动力学仿真</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8A%A8%E6%89%8B%E5%AD%A6%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="tag">动手学深度学习</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%95%E7%89%87%E6%9C%BA/"><span class="tag">单片机</span><span class="tag">5</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"><span class="tag">卷积神经网络</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8F%8C%E4%B8%89%E6%AC%A1%E6%8F%92%E5%80%BC/"><span class="tag">双三次插值</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8F%8C%E7%BA%BF%E6%80%A7%E6%8F%92%E5%80%BC/"><span class="tag">双线性插值</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/"><span class="tag">可视化</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%9B%9B%E5%B9%B3%E9%9D%A2%E6%8F%92%E5%80%BC/"><span class="tag">四平面插值</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%9B%BE%E5%83%8F%E6%8F%92%E5%80%BC/"><span class="tag">图像插值</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%9B%BE%E5%83%8F%E6%94%BE%E5%A4%A7/"><span class="tag">图像放大</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%9B%BE%E5%83%8F%E6%97%8B%E8%BD%AC/"><span class="tag">图像旋转</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%9B%BE%E5%83%8F%E8%AF%86%E5%88%AB/"><span class="tag">图像识别</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%A4%9A%E6%A8%A1%E6%80%81%E5%A4%A7%E6%A8%A1%E5%9E%8B/"><span class="tag">多模态大模型</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"><span class="tag">学习笔记</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%AE%9A%E9%87%8F%E5%88%86%E6%9E%90/"><span class="tag">定量分析</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B0%8F%E8%BD%A6/"><span class="tag">小车</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B7%A5%E7%A8%8B%E7%83%AD%E5%8A%9B%E5%AD%A6/"><span class="tag">工程热力学</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BF%83%E7%94%B5%E4%BF%A1%E5%8F%B7%E9%87%87%E9%9B%86/"><span class="tag">心电信号采集</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BF%AB%E9%80%9F%E6%88%AA%E6%96%ADHuber%E6%8D%9F%E5%A4%B1/"><span class="tag">快速截断Huber损失</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%89%A9%E6%95%A3%E6%96%B9%E7%A8%8B/"><span class="tag">扩散方程</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/"><span class="tag">支持向量机</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%91%E7%81%BE%E6%9C%BA%E5%99%A8%E4%BA%BA/"><span class="tag">救灾机器人</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E5%80%BC%E8%BF%AD%E4%BB%A3%E6%B1%82%E8%A7%A3/"><span class="tag">数值迭代求解</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E5%AD%97%E4%BF%A1%E5%8F%B7%E5%A4%84%E7%90%86/"><span class="tag">数字信号处理</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E5%88%86%E6%9E%90/"><span class="tag">数据处理分析</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%96%AF%E7%89%B9%E6%9E%97%E5%8F%91%E5%8A%A8%E6%9C%BA/"><span class="tag">斯特林发动机</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%96%AF%E7%89%B9%E6%9E%97%E5%BE%AA%E7%8E%AF/"><span class="tag">斯特林循环</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%80%E8%BF%91%E9%82%BB%E6%8F%92%E5%80%BC/"><span class="tag">最近邻插值</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%89%E9%99%90%E5%85%83%E4%BB%BF%E7%9C%9F/"><span class="tag">有限元仿真</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%AC%E5%BE%81%E5%80%BC%E6%B1%82%E8%A7%A3/"><span class="tag">本征值求解</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"><span class="tag">机器学习</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%BA%E6%A2%B0%E8%87%82/"><span class="tag">机械臂</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%BA%E6%A2%B0%E8%AE%BE%E8%AE%A1/"><span class="tag">机械设计</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9F%94%E6%80%A7%E5%A5%97%E7%B4%A2%E6%83%A9%E7%BD%9A/"><span class="tag">柔性套索惩罚</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%BB%A4%E6%B3%A2%E5%99%A8/"><span class="tag">滤波器</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%83%9F%E9%9B%BE%E6%89%A9%E6%95%A3/"><span class="tag">烟雾扩散</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%94%B5%E6%9C%BA%E6%8E%A7%E5%88%B6/"><span class="tag">电机控制</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%9F%A9%E9%98%B5%E7%89%B9%E5%BE%81%E5%80%BC/"><span class="tag">矩阵特征值</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%AE%97%E6%B3%95%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"><span class="tag">算法与数据结构</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BA%BF%E6%80%A7%E4%BB%A3%E6%95%B0/"><span class="tag">线性代数</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BB%9F%E8%AE%A1%E8%BF%87%E7%A8%8B%E6%8E%A7%E5%88%B6/"><span class="tag">统计过程控制</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E5%8A%A8%E6%8E%A7%E5%88%B6%E5%8E%9F%E7%90%86/"><span class="tag">自动控制原理</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E5%8A%A8%E8%B0%83%E5%85%89/"><span class="tag">自动调光</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E7%BC%96%E7%A0%81%E5%99%A8/"><span class="tag">自编码器</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%88%B9/"><span class="tag">船</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89/"><span class="tag">计算机视觉</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%AE%BE%E8%AE%A1%E6%80%9D%E7%BB%B4/"><span class="tag">设计思维</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%B7%9D%E7%A6%BB%E7%89%B9%E6%80%A7/"><span class="tag">距离特性</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%B7%AF%E5%BE%84%E8%A7%84%E5%88%92/"><span class="tag">路径规划</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%97%AD%E7%8E%AF%E6%8E%A7%E5%88%B6/"><span class="tag">闭环控制</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%A2%91%E8%B0%B1%E5%88%86%E6%9E%90/"><span class="tag">频谱分析</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%AB%98%E6%96%AF%E6%A0%B8%E5%87%BD%E6%95%B0/"><span class="tag">高斯核函数</span><span class="tag">1</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/title1.png" alt="Homepage of Jinghua Xu" height="28"></a><p class="is-size-7"><span>© 2025 Tim</span>&nbsp;&nbsp;Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>&nbsp;&amp;&nbsp;<a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p><p class="is-size-7">© Copyright by Jinghua Xu</p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer=""></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+<p>通过上述设计理念和参数选择，旨在构建一个高精度、低噪音、长寿命的齿轮传动系统，为小提琴自动演奏机器人提供稳定可靠的动力输出。</p>
+<h3 id="运弓（Bow-Controller）构件设计与建模"><a href="#运弓（Bow-Controller）构件设计与建模" class="headerlink" title="运弓（Bow Controller）构件设计与建模"></a>运弓（Bow Controller）构件设计与建模</h3><p>运弓构件是模拟人类运弓动作的关键部件，其设计需兼顾轻量化、高刚度、多自由度控制和运动平稳性。</p>
+<p><img src="/media/b5487651e8354032eb2a290f34f7247f.jpg" alt="Bow Controller v1.0"></p>
+<p>初代拉弓模组存在“环形弓毛材料选择难”、“整体质量大”、“多弦拓展性不足”的问题，根据上述问题，对拉弓模组进行迭代，决定仍然将琴弓保留。</p>
+<p><img src="/media/a6655269488be41c880a08c91ee91dfa.png" alt="Bow Controller v2.0"></p>
+<h4 id="设计需求与理念"><a href="#设计需求与理念" class="headerlink" title="设计需求与理念"></a>设计需求与理念</h4><ul>
+<li><p>轻量化与高刚度：采用碳纤维复合材料和优化结构设计，旨在减小运弓的惯性，从而提高其响应速度和运动精度。轻量化设计有助于降低驱动系统的负担，提高动态性能。</p>
+</li>
+<li><p>多自由度控制：运弓设计具备三个自由度：往复运动（模拟弓速）、压力控制（模拟弓压）和角度调整（模拟弓毛与琴弦的接触角度）。这使得机器人能够模拟人类运弓的复杂技巧，实现对音色和音量的精细控制。</p>
+</li>
+<li><p>平稳性与稳定性：为确保运弓运动平稳无颤动，设计中采用高精度导轨和直线电机或丝杠传动。这有助于消除运动过程中的抖动，保证音质的纯净性。</p>
+</li>
+<li><p>模块化设计：弓毛部分采用可拆卸更换的模块化设计，方便日常维护和根据不同音色需求进行快速更换。</p>
+</li>
+</ul>
+<h4 id="结构设计参数与材料选取"><a href="#结构设计参数与材料选取" class="headerlink" title="结构设计参数与材料选取"></a>结构设计参数与材料选取</h4><p><img src="/media/74f7ba956c16009b37a49ea655f95c9a.png" alt="Bow Controller 构件数理模型"></p>
+<p>详细尺寸参数：</p>
+<ul>
+<li><p>运弓总长：300-400 mm，通过小提琴尺寸和演奏范围确定。</p>
+</li>
+<li><p>弓压范围：0-5 N，可通过弹簧调节，以模拟不同力度下的弓压。</p>
+</li>
+<li><p>导轨行程：200-300 mm 可调，确保运弓在琴弦上的有效运动范围。</p>
+</li>
+<li><p>响应频率：≥100 Hz，保证运弓能够快速响应音乐节奏的变化。</p>
+</li>
+</ul>
+<p>材料配置：</p>
+<ul>
+<li><p>运弓主体：碳纤维复合材料，采用工字型或箱型截面设计，以最大化刚度重量比。</p>
+</li>
+<li><p>连接件：7075 铝合金，通过 CNC 精密加工，确保连接精度和强度。</p>
+</li>
+<li><p>导轨系统：高精度直线导轨，重复定位精度可达±0.01mm，保证运弓运动的精确性和稳定性。</p>
+</li>
+</ul>
+<p>设计理由：</p>
+<ul>
+<li><p>轻量化设计：显著提高运弓的动态响应性能，减少运动惯性，使得机器人能够更灵活地进行运弓操作。</p>
+</li>
+<li><p>多自由度：使机器人能够模拟人类运弓的复杂技巧，实现对音色、音量和节奏的精细控制，提升演奏表现力。</p>
+</li>
+<li><p>高精度导轨：确保运弓运动的平稳性和重复定位精度，对于音质的稳定性和一致性至关重要。</p>
+</li>
+<li><p>模块化结构：便于弓毛部分的维护和更换，同时也为未来的功能扩展提供了便利 。</p>
+</li>
+</ul>
+<h3 id="按弦（Fingerboard-traversal）构件设计与建模"><a href="#按弦（Fingerboard-traversal）构件设计与建模" class="headerlink" title="按弦（Fingerboard traversal）构件设计与建模"></a>按弦（Fingerboard traversal）构件设计与建模</h3><p><img src="/media/c4ce7ecdcea78647d909e6a7587016d4.jpg" alt="Fingerboard traversal"></p>
+<p>按弦机构是模拟人类手指按弦动作的关键部件，其设计要求高精度定位、快速响应、可调按压力和多指模拟。</p>
+<p><img src="/media/55a62e15849581ae93c69a6a2671bf58.jpg" alt="小提琴侧视图"></p>
+<p>从技术角度而言，机器人需要能够在连续域内随时间调节音高。上图描绘了小提琴的侧视图。Ls代表弦长，即从琴桥到琴枕的距离。红色箭头描绘了一个示例手指位置，演奏大三度音。L”是指手指位置与琴桥的距离。指板穿越系统应能在琴弦上的任意位置停止琴弦，从而实现L”<br>＜L#。通过改变L”，我们可以改变琴弦长度，进而改变音高。简化起见，假设等间距（实际情况稍有偏差）音阶，音高位置是2 的 12 次方根的函数。对于给定的空弦调音，可以计算出琴桥距离L”在任何品格位置 n 的距离。<br>$$<br>L_p=L_s(1-2^{\frac{-n}{12}})<br>$$</p>
+<h4 id="设计需求与理念-1"><a href="#设计需求与理念-1" class="headerlink" title="设计需求与理念"></a>设计需求与理念</h4><p>设计需求</p>
+<ul>
+<li><p>高精度定位：按弦点在指板上的精确位置直接决定音高。因此，设计中采用高精度步进电机或伺服电机驱动，确保按弦位置的准确性，将定位误差控制在0.1mm 以内，以保证音准的准确性和一致性 。</p>
+</li>
+<li><p>快速响应：按弦动作需要快速完成，以适应乐曲节奏的快速变化。通过优化机构传动链和减小运动部件质量，实现按弦动作的快速响应。</p>
+</li>
+<li><p>可调按压力：模拟人类手指按压力度，避免过度按压导致琴弦损伤或按压不足导致音色不佳。通过力传感器反馈和闭环控制，实现按压力的精确调节 。</p>
+</li>
+<li><p>多指模拟：能够同时或快速连续按压多个琴弦，以演奏和弦或快速音阶。设计中实现四弦独立控制，分别对应G 弦（196Hz）、D 弦（294Hz）、A 弦（440Hz）和 E弦（659Hz）的音高 。</p>
+</li>
+</ul>
+<p>设计理念</p>
+<ul>
+<li><p>采用齿轮齿条传动（耐磨、结构简单）</p>
+</li>
+<li><p>步进电机驱动（开环控制简单、位置精准、保持转矩）</p>
+</li>
+<li><p>滚珠式直线导轨（精度高、噪音大）</p>
+</li>
+</ul>
+<h4 id="结构设计参数与材料选取-1"><a href="#结构设计参数与材料选取-1" class="headerlink" title="结构设计参数与材料选取"></a>结构设计参数与材料选取</h4><p>结构参数：</p>
+<ul>
+<li><p>按弦杆数量：4 根（试验阶段为 1 根），每根按弦杆独立控制，对应小提琴的四根琴弦 。</p>
+</li>
+<li><p>按弦杆直径：3-5 mm，旨在平衡强度与空间限制，确保按弦杆的刚性 。</p>
+</li>
+<li><p>按压力范围：0.5-2N，可调节的按压力度，模拟人手力度，以保护琴弦并优化音色 。</p>
+</li>
+<li><p>按弦杆行程：5-10 mm，覆盖多把位按压琴弦所需的有效行程 。</p>
+</li>
+<li><p>定位精度：±0.1 mm，确保按弦位置的精确性，保证音高准确 。</p>
+</li>
+<li><p>响应时间：≤10 ms，保证按弦动作的快速性，适应各种演奏技巧 。</p>
+</li>
+</ul>
+<p>材料配置：</p>
+<ul>
+<li><p>按弦杆：不锈钢 304/316L，以确保低摩擦和长期稳定性 。</p>
+</li>
+<li><p>导向套：PEEK工程塑料，利用其自润滑特性，减小按弦杆运动时的摩擦阻力 。</p>
+</li>
+<li><p>驱动系统：伺服电机，构成闭环控制系统，实现按弦动作的精确控制 。</p>
+</li>
+<li><p>按压末端：硅藻泥，模拟人手指的触感，保护琴弦以及琴面板，更好还原按压效果</p>
+</li>
+</ul>
+<p>参数设计需求：</p>
+<ul>
+<li><p>高精度定位：确保音高准确和节奏流畅，是实现高质量演奏的基础 。</p>
+</li>
+<li><p>可调按压力：保护琴弦，并能够根据音乐表现需求优化音色 。</p>
+</li>
+<li><p>独立控制：实现和弦和复杂音阶的演奏，极大地丰富了机器人的演奏能力。</p>
+</li>
+<li><p>快速响应：使机器人能够适应各种演奏技巧的要求，如快速换把和颤音等。</p>
+</li>
+</ul>
+<h3 id="装配模型"><a href="#装配模型" class="headerlink" title="装配模型"></a>装配模型</h3><p>小提琴自动演奏机器人的整体装配模型展示了各个关键构件如何协同工作，以实现复杂的演奏功能。该模型包括指板遍历机构和琴弓控制机构等主要部件，它们共同构成了机器人的核心运动系统。</p>
+<p><img src="/media/b99d7042c32e0662693c9051eb8316a5.jpg" alt="整体装配效果"></p>
+<h4 id="工作原理流程简述"><a href="#工作原理流程简述" class="headerlink" title="工作原理流程简述"></a>工作原理流程简述</h4><ol>
+<li><p>乐谱解析：机器人首先接收 MIDI 文件，并从中解析出音高、音长、节奏等音乐信息 。</p>
+</li>
+<li><p>运动规划：根据解析出的音乐信息，系统生成运弓和按弦机构的详细运动轨迹和控制指令 。</p>
+</li>
+<li><p>运弓驱动：伺服电机驱动运弓进行往复运动，并精确控制弓压和弓速，模拟人类运弓的力度和速度变化。</p>
+</li>
+<li><p>按弦控制：独立的驱动系统控制各按弦杆，精确按压指板上的琴弦，以产生准确的音高 。</p>
+</li>
+<li><p>传感器反馈：系统实时监测运弓和按弦机构的运动状态，并通过传感器反馈数据进行闭环控制和校正，确保运动的精确性 。</p>
+</li>
+<li><p>音色优化：结合人工智能算法，系统实时优化演奏参数，以提升音色表现力，使其更接近人类演奏 。</p>
+</li>
+</ol>
+<h4 id="控制系统简述"><a href="#控制系统简述" class="headerlink" title="控制系统简述"></a>控制系统简述</h4><p><img src="/media/b276742d6c41c85b33afac149cdfda5b.png" alt="控制系统"></p>
+<h4 id="功能特点与意义"><a href="#功能特点与意义" class="headerlink" title="功能特点与意义"></a>功能特点与意义</h4><p>功能特点：</p>
+<ul>
+<li><p>自动化演奏：实现小提琴音乐的完全自动化演奏。</p>
+</li>
+<li><p>高精度音高：通过精确的按弦控制，确保音高准确无误。</p>
+</li>
+<li><p>音色表现力：通过弓压、弓速和角度的精细控制，模拟人类演奏的音色变化。</p>
+</li>
+<li><p>节奏准确性：精确的运动规划和控制确保演奏节奏的准确性。</p>
+</li>
+<li><p>可编程性：用户可以通过编程控制机器人演奏不同的乐曲和风格。</p>
+</li>
+<li><p>实时反馈：传感器反馈系统保证了机器人运动的精确性和稳定性。</p>
+</li>
+</ul>
+<p>技术意义：</p>
+<ul>
+<li><p>技术集成验证：装配模型是验证机器人各部件协调性和系统整体可行性的重要基础。</p>
+</li>
+<li><p>直观展示：通过爆炸视图等形式，可以直观地展示机器人内部结构和各部件的工作原理，有助于理解其复杂性。</p>
+</li>
+<li><p>性能评估基础：为后续的仿真分析和性能校核提供了基础模型，有助于在实际制造前发现并解决潜在问题 。</p>
+</li>
+<li><p>创新应用：该项目是机器人技术在艺术领域创新应用的典型范例，展示了机器人技术在非传统领域的巨大潜力。</p>
+</li>
+</ul>
+<h2 id="工艺链选择"><a href="#工艺链选择" class="headerlink" title="工艺链选择"></a>工艺链选择</h2><p>关键构件的工艺链选择对于小提琴自动演奏机器人的性能、精度、成本和生产效率具有决定性影响。本节将详细阐述齿轮、运弓构件和按弦机构的完整工艺链，并说明选择这些工艺的理由，强调多种工艺的结合应用。</p>
+<h3 id="齿轮工艺链选择"><a href="#齿轮工艺链选择" class="headerlink" title="齿轮工艺链选择"></a>齿轮工艺链选择</h3><p>齿轮作为核心传动部件，其制造工艺链必须确保高精度、高强度、优异的耐磨性和低噪音。以下是所用齿轮完整工艺链及其理由：</p>
+<h4 id="毛坯制备与预处理"><a href="#毛坯制备与预处理" class="headerlink" title="毛坯制备与预处理"></a>毛坯制备与预处理</h4><ul>
+<li><p>锻造制坯：对于高强度齿轮，通常采用热模锻工艺制备齿轮毛坯。锻造能够细化晶粒，改善材料的组织结构，从而显著提高齿轮的抗冲击韧性和疲劳强度。这对于承受频繁启停和变速载荷的齿轮至关重要。</p>
+<ul>
+<li>理由：相较于铸造，锻造能够消除铸造缺陷，使金属内部组织更致密，力学性能更优异。虽然铸造适用于大型或结构复杂的齿轮毛坯，但对于小提琴机器人所需的高精度、高强度齿轮，锻造是更优选择 。</li>
+</ul>
+</li>
+<li><p>正火处理：锻造后的齿轮毛坯需要进行正火处理。正火是将钢加热到临界温度以上，保温后在空气中冷却的热处理工艺。其目的是消除锻造过程中产生的内应力，细化晶粒，改善钢的切削性能，为后续的加工和热处理做好组织准备。</p>
+<ul>
+<li>理由：正火处理能够均匀化组织，降低硬度，提高塑性，从而便于后续的车削加工，并减少加工硬化现象。</li>
+</ul>
+</li>
+<li><p>车削加工：利用数控车床对正火后的齿轮毛坯进行粗车削。这一步骤旨在高效去除多余材料，形成齿轮的基本几何形状，并提供精确的基准面，为后续的齿形加工奠定基础。</p>
+<ul>
+<li>理由：数控车削具有高效率和高精度的特点，能够确保齿轮毛坯的尺寸精度和表面质量，为后续的精密加工提供良好的起点。</li>
+</ul>
+</li>
+</ul>
+<h4 id="齿形加工与热处理"><a href="#齿形加工与热处理" class="headerlink" title="齿形加工与热处理"></a>齿形加工与热处理</h4><ul>
+<li><p>滚齿加工：滚齿是制造渐开线齿轮最常用且高效的展成法加工方法。它通过滚刀与齿轮毛坯的相对运动，连续切削出齿形。滚齿加工具有高效率、高精度和加工范围广的优点，适用于大批量生产。</p>
+<ul>
+<li>理由：滚齿能够保证齿形精度，对于小提琴机器人齿轮所需的ISO5级精度，滚齿是实现这一目标的关键步骤。同时，其高效性有助于控制生产成本。</li>
+</ul>
+</li>
+<li><p>插齿加工（可选）：对于内齿轮或对齿形精度有更高要求的半精加工，可以采用插齿加工。插齿机通过插齿刀的往复运动和旋转运动，切削出齿形，能够获得更高的齿形精度和表面质量。</p>
+<ul>
+<li>理由：在某些特定情况下，如内齿轮或需要更高齿形精度的齿轮，插齿可以作为滚齿的补充或替代工艺，以满足更严苛的设计要求。</li>
+</ul>
+</li>
+<li><p>渗碳淬火回火：这是齿轮制造中至关重要的热处理环节。渗碳是将碳原子渗入齿轮表面，使其表面碳含量增加，然后进行淬火和低温回火。处理后，齿轮表面可获得HRC58-62的高硬度，而心部仍保持高韧性。这显著提高了齿轮的耐磨性和疲劳强度，使其能够承受高载荷和频繁的啮合。</p>
+<ul>
+<li>理由：小提琴机器人齿轮需要承受高频次的载荷，渗碳淬火回火能够赋予齿轮“外硬内韧”的特性，确保其在长期运行中的可靠性和寿命。这是提高齿轮性能的关键步骤。</li>
+</ul>
+</li>
+</ul>
+<h4 id="精加工与后处理"><a href="#精加工与后处理" class="headerlink" title="精加工与后处理"></a>精加工与后处理</h4><ul>
+<li><p>磨齿精加工：热处理后，齿轮会产生一定的变形。磨齿精加工是消除热处理变形、进一步提高齿形精度（达到ISO5 级甚至更高）的关键步骤。磨齿能够显著降低传动噪音，提高传动的平稳性 。</p>
+<ul>
+<li>理由：磨齿是获得高精度齿轮的必要手段，对于小提琴机器人对噪音和运动平稳性的高要求，磨齿能够有效提升齿轮的性能。</li>
+</ul>
+</li>
+<li><p>珩磨/抛光 (可选)：为了进一步改善齿轮表面粗糙度，获得镜面光洁度，可以进行珩磨或抛光处理。这有助于降低齿面摩擦系数，减少噪音，并提高齿轮的传动效率。</p>
+<ul>
+<li>理由：在对噪音和传动效率有极致要求的场合，珩磨/抛光能够提供更优异的表面质量，进一步提升齿轮的性能。</li>
+</ul>
+</li>
+<li><p>质量检测：在齿轮制造的各个阶段，特别是最终阶段，需要进行严格的质量检测。检测内容包括齿形误差、齿向误差、表面粗糙度、硬度、尺寸精度等，以确保齿轮满足设计要求和精度等级。</p>
+<ul>
+<li>理由： 质量检测是保证产品质量的最后一道防线，确保每个齿轮都符合小提琴自动演奏机器人的严苛要求。</li>
+</ul>
+</li>
+<li><p>表面处理：为了进一步提高齿轮的耐磨性、耐腐蚀性和降低摩擦，可以进行额外的表面处理。例如，对于斜齿轮齿条，可以采用三氯甲烷、氯化烷、冰醋酸的混合溶剂进行微溶解抛光，并施加 PTFE（聚四氟乙烯）润滑喷雾涂层，以降低阻力并减少噪音 。</p>
+<ul>
+<li>理由：这些表面处理能够优化齿轮的摩擦学性能，延长使用寿命，并进一步降低运行噪音，对于小提琴机器人这种对噪音敏感的应用至关重要。</li>
+</ul>
+</li>
+</ul>
+<h4 id="齿轮工艺链总结"><a href="#齿轮工艺链总结" class="headerlink" title="齿轮工艺链总结"></a>齿轮工艺链总结</h4><table>
+<thead>
+<tr>
+<th><strong>阶段</strong></th>
+<th><strong>工艺名称</strong></th>
+<th><strong>目的</strong></th>
+<th><strong>关键技术/设备</strong></th>
+<th><strong>理由</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>毛坯制备</strong></td>
+<td>锻造制坯</td>
+<td>细化晶粒，提高力学性能</td>
+<td>热模锻设备</td>
+<td>确保高强度和疲劳寿命</td>
+</tr>
+<tr>
+<td></td>
+<td>正火处理</td>
+<td>消除内应力，改善切削性能</td>
+<td>热处理炉</td>
+<td>为后续加工做准备</td>
+</tr>
+<tr>
+<td><strong>齿形加工</strong></td>
+<td>车削加工</td>
+<td>形成基本形状，提供基准面</td>
+<td>数控车床</td>
+<td>高效去除余量，保证尺寸精度</td>
+</tr>
+<tr>
+<td></td>
+<td>滚齿加工</td>
+<td>形成精确齿形，高效率</td>
+<td>数控滚齿机</td>
+<td>实现高精度齿形，适用于大批量生产</td>
+</tr>
+<tr>
+<td></td>
+<td>插齿加工(可选)</td>
+<td>适用于内齿轮或更高精度要求</td>
+<td>插齿机</td>
+<td>满足特殊齿轮或更高精度需求</td>
+</tr>
+<tr>
+<td><strong>热处理</strong></td>
+<td>渗碳淬火回火</td>
+<td>表面高硬度，心部高韧性</td>
+<td>渗碳炉、淬火槽、回火炉</td>
+<td>显著提高耐磨性和疲劳强度</td>
+</tr>
+<tr>
+<td><strong>精加工</strong></td>
+<td>磨齿精加工</td>
+<td>消除热处理变形，提高齿形精度，降低噪音</td>
+<td>磨齿机</td>
+<td>确保最终齿轮精度和降低噪音</td>
+</tr>
+<tr>
+<td><strong>后处理</strong></td>
+<td>珩磨/抛光 (可选)</td>
+<td>进一步改善表面粗糙度，降低摩擦</td>
+<td>珩磨机、抛光设备</td>
+<td>提升传动效率和进一步降低噪音</td>
+</tr>
+<tr>
+<td></td>
+<td>质量检测</td>
+<td>确保满足设计要求和精度等级</td>
+<td>齿轮测量中心、硬度计、粗糙度仪</td>
+<td>保证产品质量</td>
+</tr>
+<tr>
+<td></td>
+<td>表面处理</td>
+<td>提高耐磨性、耐腐蚀性，降低摩擦和噪音</td>
+<td>喷涂设备、抛光设备</td>
+<td>优化齿轮性能，延长使用寿命，降低运行噪音</td>
+</tr>
+</tbody></table>
+<h3 id="运弓构件工艺链选择"><a href="#运弓构件工艺链选择" class="headerlink" title="运弓构件工艺链选择"></a>运弓构件工艺链选择</h3><h4 id="运弓构件工艺"><a href="#运弓构件工艺" class="headerlink" title="运弓构件工艺"></a>运弓构件工艺</h4><p>运弓构件主要采用碳纤维复合材料制造，其工艺链需要确保轻量化、高刚度和优异的力学性能：</p>
+<ul>
+<li><p>预浸料铺层与热压罐固化：这是碳纤维复合材料成型的核心工艺。首先，将碳纤维预浸料（预先浸渍树脂的纤维布）按照设计要求进行精确铺层，形成所需的形状。然后，将铺层后的构件放入热压罐中，在高温高压条件下进行固化。这种工艺能够精确控制纤维含量和树脂分布，消除气泡和孔隙，从而获得高性能的复合材料构件。</p>
+<ul>
+<li>理由：热压罐固化能够确保复合材料的致密性和力学性能，是制造高强度、高刚度运弓的关键。</li>
+</ul>
+</li>
+<li><p>CNC铣削加工：固化成型后的碳纤维运弓需要进行精密加工，以达到最终的尺寸和形状精度。采用高精度CNC铣床进行精加工，并使用专用的金刚石刀具和优化切削参数，以避免碳纤维材料在加工过程中出现分层、毛刺等缺陷。</p>
+<ul>
+<li>理由：CNC铣削能够实现复杂形状的精密加工，确保运弓的几何精度和表面质量，满足机器人对运动精度的要求。</li>
+</ul>
+</li>
+<li><p>表面处理：完成机械加工后，运弓可以进行喷漆或涂层处理，以提高其表面耐磨性、耐腐蚀性，并改善外观美观度。</p>
+<ul>
+<li>理由：表面处理不仅能保护运弓，还能提升其视觉效果，使其更符合产品设计要求。</li>
+</ul>
+</li>
+</ul>
+<h4 id="运弓构件工艺链总结"><a href="#运弓构件工艺链总结" class="headerlink" title="运弓构件工艺链总结"></a>运弓构件工艺链总结</h4><table>
+<thead>
+<tr>
+<th><strong>阶段</strong></th>
+<th><strong>工艺名称</strong></th>
+<th><strong>目的</strong></th>
+<th><strong>关键技术/设备</strong></th>
+<th><strong>理由</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>成型</strong></td>
+<td>预浸料铺层与热压罐固化</td>
+<td>形成高性能复合材料构件</td>
+<td>铺层台、热压罐</td>
+<td>确保轻量 化、高刚度和优异力学性能</td>
+</tr>
+<tr>
+<td><strong>精加工</strong></td>
+<td>CNC 铣削加工</td>
+<td>达到最终尺寸和形状精度</td>
+<td>高精度 CNC 铣床、金刚石刀具</td>
+<td>确保几何精度和表面质量</td>
+</tr>
+<tr>
+<td><strong>后处理</strong></td>
+<td>表面处理</td>
+<td>提高耐磨性、耐腐蚀性，改善外观</td>
+<td>喷漆设备、涂层设备</td>
+<td>保护构件，提升产品美观度</td>
+</tr>
+</tbody></table>
+<h3 id="按弦机构工艺链选择"><a href="#按弦机构工艺链选择" class="headerlink" title="按弦机构工艺链选择"></a>按弦机构工艺链选择</h3><h4 id="按弦机构工艺"><a href="#按弦机构工艺" class="headerlink" title="按弦机构工艺"></a>按弦机构工艺</h4><p>按弦机构中的按弦杆主要采用不锈钢制造，其工艺链需要确保高精度、高表面光洁度和优异的耐腐蚀性：</p>
+<ul>
+<li><p>精密棒料下料：选用高品质不锈钢精密棒料作为原材料，通过自动送料和精确下料设备，确保原材料的尺寸精度和一致性。</p>
+<ul>
+<li>理由：精确的原材料尺寸是后续精密加工的基础，有助于减少材料浪费和加工时间。</li>
+</ul>
+</li>
+<li><p>数控车削与铣削：利用数控车床对不锈钢棒料进行车削，形成按弦杆的圆柱外形、台阶和螺纹等特征。对于键槽等非旋转对称特征，则通过数控铣削完成。数控加工能够确保高精度和高效率。</p>
+<ul>
+<li>理由：数控车铣复合加工能够一次装夹完成多道工序，提高加工效率和精度，确保按弦杆的几何尺寸符合设计要求。</li>
+</ul>
+</li>
+<li><p>热处理：根据不锈钢的具体牌号和性能要求，可以进行固溶处理或淬火回火处理。固溶处理旨在消除加工应力，提高材料的塑性和韧性；淬火回火则可以进一步优化材料的力学性能和耐腐蚀性。</p>
+<ul>
+<li>理由：热处理能够优化按弦杆的内部组织，提高其强度、硬度和耐腐蚀性，确保其在长期使用中的稳定性和可靠性。</li>
+</ul>
+</li>
+<li><p>精密研磨**/**抛光：为了获得极高的表面光洁度，按弦杆需要进行精密研磨或抛光处理。可以使用无心磨床或专用抛光设备，使按弦杆表面达到镜面效果。</p>
+<ul>
+<li>理由：极高的表面光洁度能够显著降低按弦杆与导向套之间的摩擦阻力，提高按弦动作的灵敏度和响应速度，同时也能提升产品的外观质量。</li>
+</ul>
+</li>
+</ul>
+<h4 id="按弦机构工艺链总结："><a href="#按弦机构工艺链总结：" class="headerlink" title="按弦机构工艺链总结："></a>按弦机构工艺链总结：</h4><table>
+<thead>
+<tr>
+<th><strong>阶段</strong></th>
+<th><strong>工艺名称</strong></th>
+<th><strong>目的</strong></th>
+<th><strong>关键技术/设备</strong></th>
+<th><strong>理由</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>原材料</strong></td>
+<td>精密棒料</td>
+<td>确保原材料尺寸精</td>
+<td>自动送料下料机</td>
+<td>减少材料浪 费，提高加工</td>
+</tr>
+<tr>
+<td><strong>准备</strong></td>
+<td>下料</td>
+<td>度和一致性</td>
+<td></td>
+<td>效率</td>
+</tr>
+<tr>
+<td><strong>机械加工</strong></td>
+<td>数控车削与铣削</td>
+<td>形成按弦杆的几何形状和特征</td>
+<td>数控车床、数控铣床</td>
+<td>确保高精度和高效率</td>
+</tr>
+<tr>
+<td><strong>热处理</strong></td>
+<td>固溶处理/淬火回火</td>
+<td>优化力学性能和耐腐蚀性</td>
+<td>热处理炉</td>
+<td>提高强度、硬度和耐腐蚀性</td>
+</tr>
+<tr>
+<td><strong>精加工</strong></td>
+<td>精密研磨/抛光</td>
+<td>获得极高表面光洁度，降低摩擦</td>
+<td>无心磨床、抛光设备</td>
+<td>提升运动灵敏度，改善外观质量</td>
+</tr>
+</tbody></table>
+<p>通过上述详细的工艺链选择和组合，可以确保小提琴自动演奏机器人中各个关键构件的制造质量，从而为机器人的高性能、高精度和长寿命运行提供坚实的基础。</p>
+<h2 id="模型仿真及校核"><a href="#模型仿真及校核" class="headerlink" title="模型仿真及校核"></a>模型仿真及校核</h2><h3 id="有限元分析-FEA"><a href="#有限元分析-FEA" class="headerlink" title="有限元分析(FEA)"></a>有限元分析(FEA)</h3><p>有限元分析是一种数值计算方法，用于求解复杂结构在载荷作用下的应力、应变、变形和振动等问题。在小提琴自动演奏机器人中，有限元分析主要用于关键构件的强度、刚度和疲劳寿命评估。</p>
+<ul>
+<li><p>应力应变分析：对齿轮、弓臂和按弦杆等关键构件进行应力应变分析，可以识别高应力集中区域，评估构件在最大载荷下的安全裕度，确保其强度满足设计要求，避免发生塑性变形或断裂。</p>
+</li>
+<li><p>变形分析：计算构件在载荷作用下的变形量，验证其刚度是否满足要求。对于高精度机器人，微小的变形都可能导致定位误差，因此严格控制变形量至关重要。</p>
+</li>
+<li><p>疲劳寿命预测：小提琴自动演奏机器人需要长时间、高频率地运行，因此关键部件的疲劳寿命是重要的考量因素。有限元分析可以预测齿轮、轴承等易疲劳部件的疲劳寿命，指导材料选择、结构优化和维护计划，从而延长机器人的使用寿命。</p>
+</li>
+<li><p>仿真软件：常用的有限元分析软件包括 ANSYS、Abaqus 和 SolidWorks Simulation等。这些软件提供了强大的网格划分、材料模型和载荷施加功能，能够进行精确的结构分析，本次仿真使用Fusion 360 内置的 ANSYS插件进行仿真。</p>
+</li>
+</ul>
+<h3 id="仿真结果"><a href="#仿真结果" class="headerlink" title="仿真结果"></a>仿真结果</h3><p>以下是齿轮与齿条啮合的仿真分析结果图示例，这些图表直观地展示了齿轮系统在工作状态下的性能表现，是验证齿轮系统性能和安全性的重要依据。</p>
+<p><img src="/media/8088d17a97141b9ee5012e90ff7ef7a2.png" alt="仿真结果"></p>
+<p>通过上述全面的模型仿真和校核，可以确保小提琴自动演奏机器人的齿轮系统及其他关键构件在设计阶段就达到高标准，为最终产品的成功开发奠定坚实基础。</p>
+<h2 id="可持续性分析"><a href="#可持续性分析" class="headerlink" title="可持续性分析"></a>可持续性分析</h2><p>小提琴自动演奏机器人项目不仅在技术和艺术领域具有创新意义，其可持续性也是一个值得深入探讨的方面。可持续性分析主要关注项目在环境和经济两个维度上的可行性，以评估其长期发展潜力和社会价值。</p>
+<h3 id="环境可行性分析"><a href="#环境可行性分析" class="headerlink" title="环境可行性分析"></a>环境可行性分析</h3><p>环境可行性分析旨在评估小提琴自动演奏机器人在其生命周期内对环境可能产生的影响，并探讨如何通过设计和制造优化来降低这些影响。</p>
+<h4 id="材料选择与资源消耗"><a href="#材料选择与资源消耗" class="headerlink" title="材料选择与资源消耗"></a>材料选择与资源消耗</h4><ul>
+<li>积极影响：项目在材料选择上，如齿轮材料推荐合金钢（20CrMnTi）和工程塑料（POM），弓臂采用碳纤维复合材料，按弦机构采用不锈钢。这些材料的选择在保证性能的同时，也考虑了其可回收性和耐用性。例如，合金钢和不锈钢是可回收材料，有助于减少原生资源消耗。工程塑料如POM 在某些应用中可替代金属，降低能耗和材料消耗。</li>
+<li>潜在挑战与优化：碳纤维复合材料的回收目前仍面临挑战，其生产过程也相对能耗较高。未来可以探索更环保的碳纤维生产技术，或开发易于回收的复合材料。此外，在制造过程中应尽量减少废料产生，并对废料进行分类回收。</li>
+</ul>
+<h4 id="能源消耗"><a href="#能源消耗" class="headerlink" title="能源消耗"></a>能源消耗</h4><ul>
+<li><p>运行能耗：机器人运行过程中，驱动电机（伺服电机、步进电机、BLDC电机）是主要的能耗来源。通过优化控制算法，提高电机效率，以及采用低功耗的传感器和控制系统，可以有效降低机器人的运行能耗。</p>
+</li>
+<li><p>制造能耗：齿轮的锻造、热处理、机加工以及碳纤维复合材料的固化等工艺都需要消耗大量能源。选择能效更高的制造设备，优化工艺流程，例如采用精密锻造减少后续机加工量，可以降低整体制造能耗。</p>
+</li>
+</ul>
+<h4 id="噪音与振动"><a href="#噪音与振动" class="headerlink" title="噪音与振动"></a>噪音与振动</h4><ul>
+<li><p>积极影响：项目设计中特别强调了低噪音运行，例如采用斜齿轮、优化齿形、精密磨齿和表面处理（PTFE 涂层）等措施，旨在将噪音控制在 35dB以下。这不仅提升了演奏音质，也降低了机器人运行对周围环境的噪音污染，尤其是在家庭或教育场所使用时，其环境友好性更高。</p>
+</li>
+<li><p>潜在挑战与优化：尽管采取了降噪措施，但机械运动仍会产生一定噪音。未来可以进一步研究主动降噪技术，或采用更先进的静音材料和结构设计。</p>
+</li>
+</ul>
+<h4 id="废弃物管理"><a href="#废弃物管理" class="headerlink" title="废弃物管理"></a>废弃物管理</h4><ul>
+<li><p>设计优化：在设计阶段就考虑产品的可拆卸性和模块化，便于报废时对不同材料进行分类回收。例如，弓毛部分的模块化设计便于更换和回收。</p>
+</li>
+<li><p>生命周期评估(LCA)：进行全面的生命周期评估，从原材料获取、制造、使用到报废回收的全过程进行环境影响分析，识别环境热点，并制定相应的改进策略。</p>
+</li>
+</ul>
+<h3 id="经济可行性分析"><a href="#经济可行性分析" class="headerlink" title="经济可行性分析"></a>经济可行性分析</h3><p>经济可行性分析旨在评估小提琴自动演奏机器人项目的经济效益、市场潜力、成本控制和商业模式，以确保其可持续发展。</p>
+<h4 id="市场潜力与需求"><a href="#市场潜力与需求" class="headerlink" title="市场潜力与需求"></a>市场潜力与需求</h4><ul>
+<li><p>艺术与教育市场：小提琴自动演奏机器人面向艺术表演、音乐教育和个人娱乐等多个市场。在音乐教育领域，它可以作为辅助教学工具，降低学习门槛，激发学习兴趣。在艺术表演领域，可以拓展新的表演形式和创作可能性。随着人们对高品质音乐体验和个性化娱乐需求的增长，市场潜力巨大。</p>
+</li>
+<li><p>技术发展趋势：机器人技术、人工智能和精密制造的不断进步，将进一步降低生产成本，提高产品性能，从而扩大市场接受度。</p>
+</li>
+</ul>
+<h4 id="成本控制与效益"><a href="#成本控制与效益" class="headerlink" title="成本控制与效益"></a>成本控制与效益</h4><ul>
+<li><p>研发成本：项目涉及多学科交叉，研发投入相对较高。然而，通过模块化设计、标准化部件和高效的仿真校核，可以有效缩短研发周期，降低试错成本。</p>
+</li>
+<li><p>制造成本：齿轮的精密加工、碳纤维复合材料的成型等工艺成本较高。但随着制造技术的成熟和规模化生产，单位成本有望降低。例如，3D打印技术在小批量生产或原型制造中具有成本优势，未来可探索其在某些部件上的应用以降低成本。</p>
+</li>
+<li><p>运营与维护成本：高耐用性材料和精密设计有助于降低机器人的故障率和维护成本。模块化设计也便于部件更换和维修，进一步降低了长期运营成本。</p>
+</li>
+</ul>
+<h4 id="商业模式与盈利"><a href="#商业模式与盈利" class="headerlink" title="商业模式与盈利"></a>商业模式与盈利</h4><ul>
+<li><p>产品销售：直接销售小提琴自动演奏机器人给个人用户、音乐学院、演出团体等。</p>
+</li>
+<li><p>服务模式：提供机器人租赁、定制化演奏服务、音乐教育课程等。</p>
+</li>
+<li><p>技术授权：将核心技术授权给其他制造商，扩大技术影响力并获取收益。</p>
+</li>
+<li><p>内容生态：开发配套的乐谱库、演奏技巧库和 AI优化算法，形成内容生态，增加用户粘性。</p>
+</li>
+</ul>
+<p>综上所述，小提琴自动演奏机器人项目在环境和经济方面都具备良好的可行性。通过在设计、制造和运营全生命周期中融入可持续发展理念，并积极探索多元化的商业模式，该项目有望实现长期的社会、环境和经济效益。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>小提琴自动演奏机器人项目是精密机械、电子、控制和人工智能等多学科深度融合的典范，旨在模拟人类小提琴演奏家的精湛技艺，实现音乐的自动化演奏。本报告围绕该项目，详细阐述了其核心传动部件——齿轮系统的设计与制造，并深入探讨了相关材料选择、关键构件设计、工艺链选择、模型仿真及校核，以及项目的可持续性。</p>
+<p>项目背景与意义部分强调了机器人技术在艺术领域的独特潜力，以及小提琴演奏对人类生理和心理素质的极高要求。该项目不仅推动了精密机械、控制系统和人工智能等前沿技术的发展，更在创新音乐教育、拓展艺术表现形式、传承文化遗产以及培养复合型人才方面具有深远意义。其发展趋势预示着更高精度、智能化、多模态融合和模块化定制的未来。</p>
+<p>在材料选择方面，报告针对齿轮、弓臂构件和按弦机构等关键部件，推荐了合金钢（如20CrMnTi）、碳纤维复合材料和不锈钢（如304/316L）等高性能材料，并详细阐述了选择理由。这些材料的选择旨在满足机器人对高强度、高刚度、轻量化、低噪音和耐腐蚀等严苛性能要求，并通过材料对比分析，展现了在性能与成本之间进行权衡的综合考量。</p>
+<p>关键构件设计与建模部分，以齿轮为例，详细介绍了其基本参数计算、设计理念（高精度传动、低噪音运行、紧凑型设计、长寿命可靠性）和斜齿轮齿条的优化目标。同时，弓臂构件和按弦机构的设计也充分考虑了轻量化、多自由度控制、高精度定位和快速响应等特性。装配模型部分则清晰地展示了机器人的工作原理流程、功能特点和技术意义，凸显了各部件的协同作用。</p>
+<p>工艺链选择是确保机器人性能的关键环节。报告详细阐述了齿轮的完整工艺链，包括锻造制坯、正火、车削、滚齿、渗碳淬火回火、磨齿精加工以及珩磨/抛光和表面处理等，并强调了每一步工艺对齿轮性能提升的重要性。弓臂构件的碳纤维复合材料制造工艺（预浸料铺层与热压罐固化、CNC铣削、表面处理）和按弦机构的精密制造工艺（精密棒料下料、数控车铣、热处理、精密研磨/抛光）也得到了详细介绍，展现了多工艺结合以实现高性能部件制造的策略。</p>
+<p>模型仿真及校核部分，强调了运动学仿真、动力学仿真和有限元分析在设计验证、安全评估和优化指导中的重要作用。通过这些仿真手段，可以在物理样机制造前发现并解决潜在问题，确保齿轮系统及其他关键构件在设计阶段就达到高标准，从而提高设计的可靠性和效率。</p>
+<p>最后，可持续性分析从环境和经济两个维度评估了项目的可行性。在环境方面，通过材料选择、能源消耗优化和噪音控制等措施，努力降低对环境的影响。在经济方面，项目具有广阔的市场潜力，并通过成本控制、多元化商业模式和人才培养，确保其长期可持续发展。</p>
+<p>总而言之，小提琴自动演奏机器人项目不仅是工程技术与艺术的完美结合，更是一个系统性、多学科交叉的复杂工程实践。通过对齿轮系统及其他关键构件的精细设计、材料优选、先进制造工艺的应用以及全面的仿真校核，该项目为实现高精度、高性能的自动化音乐演奏奠定了坚实基础，展现了未来机器人技术在非传统领域的巨大应用前景和价值。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li><p>黄信行, 黄淑芳, 李文鸿, 邱燕玉, 游凯程, 温扬圣. 小提琴机器人－六轴机器手臂的整合运用. 机械工业网 , 2012(4): 124-135.[<a target="_blank" rel="noopener" href="https://www.automan.tw/tw/magazine-period/54/982">https://www.automan.tw/tw/magazine-period/54/982</a>]</p>
+</li>
+<li><p>抗疲劳齿轮的研究进展：提升机械可靠性的新方法. 温岭市螺伞齿轮厂.[<a target="_blank" rel="noopener" href="http://www.lsgears.com/NewsDetail.aspx?ID=78">http://www.lsgears.com/NewsDetail.aspx?ID=78</a>]</p>
+</li>
+<li><p>齿 轮 制 造 101 ： 齿 轮 生 产 过 程 指 南 . RapidDirect.[<a target="_blank" rel="noopener" href="https://www.rapiddirect.com/zh-CN/blog/gear-manufacturing/">https://www.rapiddirect.com/zh-CN/blog/gear-manufacturing/</a>]</p>
+</li>
+<li><p>某车型汽车差速器结构设计及其齿轮的性能研究. hanspub.org, 2024.[<a target="_blank" rel="noopener" href="https://pdf.hanspub.org/mos2024135_102571870.pdf">https://pdf.hanspub.org/mos2024135_102571870.pdf</a>]</p>
+</li>
+<li><p>协作机器人结构设计及齿轮传动系统仿真. hanspub.org, 2024.[<a target="_blank" rel="noopener" href="https://www.hanspub.org/journal/paperinformation?paperid=79757">https://www.hanspub.org/journal/paperinformation?paperid=79757</a>]</p>
+</li>
+<li><p>粉末锻造齿轮材料的组织与性能研究. 粉末冶金技术, 2020.[<a target="_blank" rel="noopener" href="https://pmt.ustb.edu.cn/cn/article/id/fmyjjs202002006">https://pmt.ustb.edu.cn/cn/article/id/fmyjjs202002006</a>]</p>
+</li>
+<li><p>齿 轮 加 工 工 艺 流 程 分 析 . ResearchGate, 2025.[<a target="_blank" rel="noopener" href="https://www.researchgate.net/publication/384875475_chilunjiagonggongyiliuchengfenxi">https://www.researchgate.net/publication/384875475_chilunjiagonggongyiliuchengfenxi</a>]</p>
+</li>
+<li><p>运用力量控制技术于提升小提琴机器人演奏音色之探讨. 华艺线上图书馆.[<a target="_blank" rel="noopener" href="https://www.airitilibrary.com/Article/Detail/U0017-2211202315312089">https://www.airitilibrary.com/Article/Detail/U0017-2211202315312089</a>]</p>
+</li>
+<li><p>工业机器人领域谐波齿轮传动应用及运动精度分析. 中国学术期刊网络出版总库.[<a target="_blank" rel="noopener" href="https://cpfd.cnki.com.cn/Article/CPFDTOTAL-KDIE201710001126.htm">https://cpfd.cnki.com.cn/Article/CPFDTOTAL-KDIE201710001126.htm</a>]</p>
+</li>
+<li><p>齿轮用什么材料，齿轮常用材料有哪几种. 知乎专栏, 2023.[<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/666265403">https://zhuanlan.zhihu.com/p/666265403</a>]</p>
+</li>
+</ol>
+</div></div></article></div><nav class="pagination" role="navigation" aria-label="pagination"><div class="pagination-previous"><a href="/">上一页</a></div><div class="pagination-next"><a href="/page/3/">下一页</a></div><ul class="pagination-list is-hidden-mobile"><li><a class="pagination-link" href="/">1</a></li><li><a class="pagination-link is-current" href="/page/2/">2</a></li><li><a class="pagination-link" href="/page/3/">3</a></li><li><span class="pagination-ellipsis">…</span></li><li><a class="pagination-link" href="/page/37/">37</a></li></ul></nav></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1 is-sticky"><!--!--><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar is-rounded" src="/img/head2.png" alt="Jinghua Xu"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">Jinghua Xu</p><p class="is-size-6 is-block">明月科创实验班人工智能专业 本科大三在读</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>重庆 重庆大学国家卓越工程师学院</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">37</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">24</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">102</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/Asgard-Tim" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Weibo" href="https://www.weibo.com/u/6315188431"><i class="fab fa-weibo"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Bilibili" href="https://space.bilibili.com/171895120"><i class="fab fa-bilibili"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Email" href="mailto:20224546@stu.cqu.edu.cn"><i class="fas fa-envelope"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Phone" href="tel:+86 19132050174"><i class="fas fa-phone"></i></a></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><figure class="media-left"><a class="image" href="/2025/06/29/manufac/"><img src="/images/manufac/b99d7042c32e0662693c9051eb8316a5.jpg" alt="小提琴自动演奏机器人中的齿轮系统设计与制造"></a></figure><div class="media-content"><p class="date"><time datetime="2025-06-29T08:40:43.000Z">2025-06-29</time></p><p class="title"><a href="/2025/06/29/manufac/">小提琴自动演奏机器人中的齿轮系统设计与制造</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E4%BA%A7%E5%93%81%E5%88%B6%E9%80%A0/">产品制造</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/06/21/sweeping/"><img src="/images/sweeping/0c9ca142c80746ccde051fd86d54a57c.png" alt="SmartRobot扫地机器人"></a></figure><div class="media-content"><p class="date"><time datetime="2025-06-20T20:02:03.000Z">2025-06-21</time></p><p class="title"><a href="/2025/06/21/sweeping/">SmartRobot扫地机器人</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%BE%AE%E7%94%B5%E8%B7%AF%E8%AE%BE%E8%AE%A1/">微电路设计</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/06/10/project3/"><img src="/images/project3/9.png" alt="常微分方程反演的机器学习方法"></a></figure><div class="media-content"><p class="date"><time datetime="2025-06-09T18:59:03.000Z">2025-06-10</time></p><p class="title"><a href="/2025/06/10/project3/">常微分方程反演的机器学习方法</a></p><p class="categories"><a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/">课程项目</a> / <a href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E6%95%B0%E5%80%BC%E5%88%86%E6%9E%90/">工程数值分析</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/05/15/Survey/"><img src="/images/survey/2.png" alt="A Survey on Vision-Language-Action Models for Embodied AI"></a></figure><div class="media-content"><p class="date"><time datetime="2025-05-15T15:32:03.000Z">2025-05-15</time></p><p class="title"><a href="/2025/05/15/Survey/">A Survey on Vision-Language-Action Models for Embodied AI</a></p><p class="categories"><a href="/categories/%E5%85%B7%E8%BA%AB%E6%99%BA%E8%83%BD%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">具身智能论文阅读</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/2025/05/09/PaLM-E/"><img src="/images/palm-e/0.png" alt="PaLM-E：An Embodied Multimodal Language Model"></a></figure><div class="media-content"><p class="date"><time datetime="2025-05-09T11:57:03.000Z">2025-05-09</time></p><p class="title"><a href="/2025/05/09/PaLM-E/">PaLM-E：An Embodied Multimodal Language Model</a></p><p class="categories"><a href="/categories/%E5%85%B7%E8%BA%AB%E6%99%BA%E8%83%BD%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">具身智能论文阅读</a></p></div></article></div></div><div class="column-right-shadow is-hidden-widescreen"></div></div><div class="column column-right is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only order-3"><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/About-XJH/"><span class="level-start"><span class="level-item">About XJH</span></span><span class="level-end"><span class="level-item tag">2</span></span></a><ul><li><a class="level is-mobile" href="/categories/About-XJH/%E6%98%8E%E6%85%B5/"><span class="level-start"><span class="level-item">明慵</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/About-XJH/%E6%98%8E%E8%AF%9A/"><span class="level-start"><span class="level-item">明诚</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></li><li><a class="level is-mobile" href="/categories/%E4%B8%AA%E4%BA%BA%E9%A1%B9%E7%9B%AE/"><span class="level-start"><span class="level-item">个人项目</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%85%B7%E8%BA%AB%E6%99%BA%E8%83%BD%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/"><span class="level-start"><span class="level-item">具身智能论文阅读</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8A%A8%E6%89%8B%E5%AD%A6%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">动手学深度学习</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E7%AE%97%E6%B3%95%E5%9F%BA%E7%A1%80%E8%AF%BE/"><span class="level-start"><span class="level-item">算法基础课</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/"><span class="level-start"><span class="level-item">课程项目</span></span><span class="level-end"><span class="level-item tag">26</span></span></a><ul><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E4%BA%A7%E5%93%81%E5%88%B6%E9%80%A0/"><span class="level-start"><span class="level-item">产品制造</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E4%BA%A7%E5%93%81%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">产品设计</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95I/"><span class="level-start"><span class="level-item">定量工程设计方法I</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%AE%9A%E9%87%8F%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95II/"><span class="level-start"><span class="level-item">定量工程设计方法II</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E6%95%88%E5%AD%A6/"><span class="level-start"><span class="level-item">工效学</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">工程原理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E6%95%B0%E5%80%BC%E5%88%86%E6%9E%90/"><span class="level-start"><span class="level-item">工程数值分析</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%B7%A5%E7%A8%8B%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">工程设计</span></span><span class="level-end"><span class="level-item tag">5</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E5%BE%AE%E7%94%B5%E8%B7%AF%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">微电路设计</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86%E6%96%B9%E6%B3%95/"><span class="level-start"><span class="level-item">数学物理方法</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%99%BA%E8%83%BD%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/"><span class="level-start"><span class="level-item">智能图像处理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%9F%BA%E7%A1%80/"><span class="level-start"><span class="level-item">机器人基础</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E6%A6%82%E7%8E%87%E8%AE%BA%E4%B8%8E%E6%95%B0%E7%90%86%E7%BB%9F%E8%AE%A1/"><span class="level-start"><span class="level-item">概率论与数理统计</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E7%BA%BF%E6%80%A7%E4%BB%A3%E6%95%B0/"><span class="level-start"><span class="level-item">线性代数</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%87%AA%E5%8A%A8%E6%8E%A7%E5%88%B6%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">自动控制原理</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E8%AF%BE%E7%A8%8B%E9%A1%B9%E7%9B%AE/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1/"><span class="level-start"><span class="level-item">软件设计</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li></ul></li></ul></div></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2025/06/"><span class="level-start"><span class="level-item">六月 2025</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/archives/2025/05/"><span class="level-start"><span class="level-item">五月 2025</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2025/04/"><span class="level-start"><span class="level-item">四月 2025</span></span><span class="level-end"><span class="level-item tag">5</span></span></a></li><li><a class="level is-mobile" href="/archives/2025/03/"><span class="level-start"><span class="level-item">三月 2025</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2025/02/"><span class="level-start"><span class="level-item">二月 2025</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2025/01/"><span class="level-start"><span class="level-item">一月 2025</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/12/"><span class="level-start"><span class="level-item">十二月 2024</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/06/"><span class="level-start"><span class="level-item">六月 2024</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/02/"><span class="level-start"><span class="level-item">二月 2024</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2024/01/"><span class="level-start"><span class="level-item">一月 2024</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/12/"><span class="level-start"><span class="level-item">十二月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/11/"><span class="level-start"><span class="level-item">十一月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/10/"><span class="level-start"><span class="level-item">十月 2023</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/09/"><span class="level-start"><span class="level-item">九月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/07/"><span class="level-start"><span class="level-item">七月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/06/"><span class="level-start"><span class="level-item">六月 2023</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/05/"><span class="level-start"><span class="level-item">五月 2023</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/03/"><span class="level-start"><span class="level-item">三月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/02/"><span class="level-start"><span class="level-item">二月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%95%E7%89%87%E6%9C%BA/"><span class="tag">单片机</span><span class="tag">5</span></a></div><div class="control"><a class="tags has-addons" href="/tags/STM32/"><span class="tag">STM32</span><span class="tag">5</span></a></div><div class="control"><a class="tags has-addons" href="/tags/VLA/"><span class="tag">VLA</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%85%B7%E8%BA%AB%E6%99%BA%E8%83%BD/"><span class="tag">具身智能</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%A4%9A%E6%A8%A1%E6%80%81%E5%A4%A7%E6%A8%A1%E5%9E%8B/"><span class="tag">多模态大模型</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Python/"><span class="tag">Python</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/C/"><span class="tag">C++</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%96%AF%E7%89%B9%E6%9E%97%E5%8F%91%E5%8A%A8%E6%9C%BA/"><span class="tag">斯特林发动机</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/MATLAB/"><span class="tag">MATLAB</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Matlab/"><span class="tag">Matlab</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"><span class="tag">机器学习</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8A%A8%E6%89%8B%E5%AD%A6%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="tag">动手学深度学习</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"><span class="tag">学习笔记</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B0%8F%E8%BD%A6/"><span class="tag">小车</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%BF%A1%E5%8F%B7%E4%B8%8E%E7%B3%BB%E7%BB%9F/"><span class="tag">信号与系统</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%A2%91%E8%B0%B1%E5%88%86%E6%9E%90/"><span class="tag">频谱分析</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%96%AF%E7%89%B9%E6%9E%97%E5%BE%AA%E7%8E%AF/"><span class="tag">斯特林循环</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8A%A8%E5%8A%9B%E5%AD%A6%E4%BB%BF%E7%9C%9F/"><span class="tag">动力学仿真</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9C%89%E9%99%90%E5%85%83%E4%BB%BF%E7%9C%9F/"><span class="tag">有限元仿真</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%AE%97%E6%B3%95%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"><span class="tag">算法与数据结构</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/3D-VLA/"><span class="tag">3D-VLA</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/PaLM-E/"><span class="tag">PaLM-E</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%B7%AF%E5%BE%84%E8%A7%84%E5%88%92/"><span class="tag">路径规划</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/RANSAC/"><span class="tag">RANSAC</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E5%88%86%E6%9E%90/"><span class="tag">数据处理分析</span><span class="tag">1</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/title1.png" alt="Homepage of Jinghua Xu" height="28"></a><p class="is-size-7"><span>© 2025 Tim</span>&nbsp;&nbsp;Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>&nbsp;&amp;&nbsp;<a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p><p class="is-size-7">© Copyright by Jinghua Xu</p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Asgard-Tim"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer=""></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
             article: {
                 highlight: {
                     clipboard: true,
@@ -283,7 +810,7 @@
             }
         });</script><script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer=""></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer=""></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer=""></script><script>document.addEventListener('DOMContentLoaded', function () {
             loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
-        });</script><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/chitose.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":true},"log":false});</script>
+        });</script>
     <link rel="stylesheet" href="https://ai.tianli0.top/static/public/postChatUser_summary.min.css">
     <script>
         let tianliGPT_key = 'S-TA3IX28M1ZT7TILW';
@@ -315,5 +842,5 @@
           defaultSearchQuestions: ["视频压缩","设计"]
         };
     </script>
-    <script data-postchat_key="S-TA3IX28M1ZT7TILW" src="https://ai.tianli0.top/static/public/postChatUser_summary.min.js"></script>
-  </body></html>
+    <script data-postchat_key="S-TA3IX28M1ZT7TILW" src="https://ai.tianli0.top/static/public/tianli_gpt.min.js"></script>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/chitose.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body></html>
